@@ -1,81 +1,72 @@
-/*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
- * Licensed under the Apache License,Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 import CommonConstantsInfo from '../../viewmodel/CommonConstantsInfo';
 
 export class CommonConstants {
-  static readonly RDB_NAME = { dbName: 'taskInfo.db' } as CommonConstantsInfo; // db name
+  // The schema is incompatible with the six-task demo database; use a new
+  // database file so upgrades do not try to read missing HealthLife columns.
+  static readonly RDB_NAME = { dbName: 'healthLife_v3.db' } as CommonConstantsInfo;
 
-  /** day info table */
   static readonly DAY_INFO = {
     tableName: 'dayInfo',
     columns: ['date', 'targetTaskNum', 'finTaskNum']
   } as CommonConstantsInfo
 
-  /** global info table */
   static readonly GLOBAL_INFO = {
     tableName: 'globalInfo',
     columns: ['id', 'firstDate', 'lastDate', 'checkInDays', 'achievements']
   } as CommonConstantsInfo
 
-  /** task info table */
   static readonly TASK_INFO = {
     tableName: 'taskInfo',
     columns: [
       'id',
       'date',
       'taskID',
+      'taskName',
+      'taskType',
       'targetValue',
+      'finValue',
+      'unit',
       'isAlarm',
       'startTime',
       'endTime',
       'frequency',
       'isDone',
-      'finValue',
-      'isOpen'
+      'isOpen',
+      'status',
+      'subTasks',
+      'cycleDays',
+      'cycleTarget',
+      'dataSrc',
+      'inputHistory'
     ]
   } as CommonConstantsInfo
 
-  /** form info table */
   static readonly FORM_INFO = {
     tableName: 'formInfo',
     columns: ['id', 'formId', 'formName', 'formDimension']
   } as CommonConstantsInfo
 
-  // TaskNum
-  static readonly TASK_NUM = 6;
+  static readonly TASK_NUM = 13;
 
-  // THOUSANDTH
-  static readonly THOUSANDTH_15: string = '1.5%'; // ‘1.5%’
-  static readonly THOUSANDTH_12: string = '2.2%'; // ‘2.2%’
-  static readonly THOUSANDTH_33: string = '3.3%'; // ‘3.3%’
-  static readonly THOUSANDTH_50: string = '5%'; // ‘5%’
-  static readonly THOUSANDTH_66: string = '6.6%'; // ‘6.6%’
-  static readonly THOUSANDTH_80: string = '8%'; // ‘8%’
-  static readonly THOUSANDTH_100: string = '10%'; // ‘10%’
-  static readonly THOUSANDTH_120: string = '12%'; // ‘12%’
-  static readonly THOUSANDTH_160: string = '16%'; // ‘16%’
-  static readonly THOUSANDTH_400: string = '40%'; // ‘40%’
-  static readonly THOUSANDTH_420: string = '42%'; // ‘42%’
-  static readonly THOUSANDTH_500: string = '50%'; // ‘50%’
-  static readonly THOUSANDTH_560: string = '56%'; // ‘56%’
-  static readonly THOUSANDTH_800: string = '80%'; // ‘80%’
-  static readonly THOUSANDTH_830: string = '83%'; // ‘83%’
-  static readonly THOUSANDTH_880: string = '88%'; // ‘88%’
-  static readonly THOUSANDTH_900: string = '90%'; // ‘90%’
-  static readonly THOUSANDTH_940: string = '94%'; // ‘90%’
-  static readonly THOUSANDTH_1000: string = '100%'; // ‘100%’
+  static readonly THOUSANDTH_15: string = '1.5%';
+  static readonly THOUSANDTH_12: string = '2.2%';
+  static readonly THOUSANDTH_33: string = '3.3%';
+  static readonly THOUSANDTH_50: string = '5%';
+  static readonly THOUSANDTH_66: string = '6.6%';
+  static readonly THOUSANDTH_80: string = '8%';
+  static readonly THOUSANDTH_100: string = '10%';
+  static readonly THOUSANDTH_120: string = '12%';
+  static readonly THOUSANDTH_160: string = '16%';
+  static readonly THOUSANDTH_400: string = '40%';
+  static readonly THOUSANDTH_420: string = '42%';
+  static readonly THOUSANDTH_500: string = '50%';
+  static readonly THOUSANDTH_560: string = '56%';
+  static readonly THOUSANDTH_800: string = '80%';
+  static readonly THOUSANDTH_830: string = '83%';
+  static readonly THOUSANDTH_880: string = '88%';
+  static readonly THOUSANDTH_900: string = '90%';
+  static readonly THOUSANDTH_940: string = '94%';
+  static readonly THOUSANDTH_1000: string = '100%';
 
   static readonly DEFAULT_2: number = 2;
 
@@ -84,6 +75,8 @@ export class CommonConstants {
   static readonly DEFAULT_8: number = 8;
 
   static readonly DEFAULT_12: number = 12;
+
+  static readonly DEFAULT_14: number = 14;
 
   static readonly DEFAULT_10: number = 10;
 
@@ -109,7 +102,6 @@ export class CommonConstants {
 
   static readonly DEFAULT_180: number = 180;
 
-  // fontWeight
   static readonly FONT_WEIGHT_400: number = 400;
 
   static readonly FONT_WEIGHT_500: number = 500;
@@ -119,33 +111,27 @@ export class CommonConstants {
   static readonly FONT_WEIGHT_900: number = 900;
 
 
-  // opacity
   static readonly OPACITY_4: number = 0.4;
 
   static readonly OPACITY_6: number = 0.6;
 
-  // radius
   static readonly BORDER_RADIUS_PERCENT_50: string = '50%';
 
-  // duration
-  static readonly AD_DURATION: number = 5; // 5s
-  static readonly LAUNCHER_DELAY_TIME: number = 2000; // 2000ms
-  static readonly DURATION_1000: number = 1000; // 1000ms
-  static readonly DURATION_800: number = 800; // 700ms
-  static readonly DURATION_100: number = 100; // 100ms
+  static readonly AD_DURATION: number = 5;
+  static readonly LAUNCHER_DELAY_TIME: number = 2000;
+  static readonly DURATION_1000: number = 1000;
+  static readonly DURATION_800: number = 800;
+  static readonly DURATION_100: number = 100;
 
 
-  // list space
   static readonly LIST_ITEM_SPACE: number = 2;
 
   static readonly SPACE_4: number = 4;
 
-  // navigation title
   static readonly ADD_TASK_TITLE: string = '添加任务';
 
   static readonly EDIT_TASK_TITLE: string = '编辑任务';
 
-  // prompt message
   static readonly SETTING_FINISHED_MESSAGE = '设置完成！！！';
 
   static readonly SETTING_FINISH_FAILED_MESSAGE = '网络连接错误';
@@ -158,7 +144,6 @@ export class CommonConstants {
 
   static readonly HOME_BTN_Z = 2;
 
-  // time range
   static readonly DEFAULT_TIME: string = '08:00';
 
   static readonly GET_UP_TIME_RANGE: string = '(06:00 - 09:00)';
@@ -173,20 +158,16 @@ export class CommonConstants {
 
   static readonly SLEEP_LATE_TIME: string = '23:00';
 
-  // frequency Dialog
   static readonly EVERYDAY: string = '每天';
 
   static readonly NO_LENGTH: number = 0;
 
   static readonly INIT_WEEK_IDS: string = '1, 2, 3, 4, 5, 6, 7';
 
-  // unit
   static readonly PER_DAY: string = '/ 天';
 
-  // global data key
   static readonly GLOBAL_KEY: string = 'global';
 
-  // RemindContent
   static readonly GET_UP_TASK_NAME: string = '早起';
 
   static readonly DRINK_TASK_NAME: string = '喝水';
@@ -219,7 +200,6 @@ export class CommonConstants {
 
   static readonly ENTRY_ABILITY: string = 'EntryAbility';
 
-  // offset
   static readonly ZERO: number = 0;
 
   static readonly MINUS_20: number = -20;
@@ -228,7 +208,6 @@ export class CommonConstants {
 
   static readonly OFFSET_24: number = -24;
 
-  // targetSetting Range
   static readonly DRINK_STEP: number = 25;
 
   static readonly DRINK_MAX_RANGE: number = 500;
@@ -239,13 +218,10 @@ export class CommonConstants {
 
   static readonly EAT_APPLE_RANGE: number = 100;
 
-
-  // letter spacing
   static readonly LETTER_1: number = 0.1;
 
   static readonly LETTER_34: number = 3.4;
 
-  // achievement
   static readonly ACHIEVE_CARD_IMG_HEIGHT: number = 88;
 
   static readonly ACHIEVE_CARD_TOP: number = 38;
@@ -262,11 +238,10 @@ export class CommonConstants {
 
   static readonly FULL_HEIGHT: string = '100%';
 
-  static readonly WEEK_DAY_NUM: number = 7; // number days of one week
+  static readonly WEEK_DAY_NUM: number = 7;
 
   static readonly WEEK_DAY_TIME: number = 7 * 24 * 60 * 60 * 1000;
 
-  // Card Constants
   static readonly TAG = "UpdateFormUtils";
   static readonly FORM_PARAM_IDENTITY_KEY = "ohos.extra.param.key.form_identity";
   static readonly FORM_PARAM_DIMENSION_KEY = "ohos.extra.param.key.form_dimension";
@@ -275,20 +250,91 @@ export class CommonConstants {
   static readonly DEFAULT_DIMENSION_2X4 = 3;
   static readonly WIDGET_NAME_AGENCY = "agency";
   static readonly WIDGET_NAME_PROGRESS = "progress";
+
+  static readonly TASK_TYPE_COUNT: number = 1;
+  static readonly TASK_TYPE_VALUE: number = 2;
+  static readonly TASK_TYPE_DURATION: number = 3;
+  static readonly TASK_TYPE_TIME_POINT: number = 4;
+  static readonly TASK_TYPE_TIME_PERIOD: number = 5;
+  static readonly TASK_TYPE_SUB_TASK: number = 6;
+  static readonly TASK_TYPE_AUTO_SYNC: number = 7;
+  static readonly TASK_TYPE_CYCLE: number = 8;
+
+  static readonly TASK_STATUS_NOT_STARTED: number = 0;
+  static readonly TASK_STATUS_IN_PROGRESS: number = 1;
+  static readonly TASK_STATUS_COMPLETED: number = 2;
+  static readonly TASK_STATUS_SKIPPED: number = 3;
+  static readonly TASK_STATUS_EXPIRED: number = 4;
+  static readonly TASK_STATUS_PAUSED: number = 5;
+
+  static readonly DEFAULT_STATUS: number = 0;
+  static readonly DEFAULT_SUB_TASKS: string = '';
+  static readonly DEFAULT_CYCLE_DAYS: string = '';
+  static readonly DEFAULT_CYCLE_TARGET: number = 0;
+  static readonly DEFAULT_DATA_SRC: string = '';
+  static readonly DEFAULT_TASK_NAME: string = '';
+  static readonly DEFAULT_TASK_TYPE: number = 0;
+  static readonly DEFAULT_UNIT: string = '';
+
+  static readonly ACHIEVEMENT_TYPE_CHECK_IN: string = 'checkIn';
+  static readonly ACHIEVEMENT_TYPE_TASK_DONE: string = 'taskDone';
+  static readonly ACHIEVEMENT_TYPE_STREAK: string = 'streak';
+
+  static readonly CALENDAR_WEEK_DAYS: number = 7;
+  static readonly CALENDAR_MONTHS: number = 12;
+  static readonly CALENDAR_ROWS: number = 6;
+
+  static readonly BRUSH_TEETH_TASK_NAME_NEW: string = '每日刷牙';
+  static readonly STEP_TASK_NAME: string = '每日步数';
+  static readonly EXERCISE_TASK_NAME: string = '每日运动';
+  static readonly SLEEP_EARLY_TASK_NAME: string = '早睡';
+  static readonly SLEEP_ENSURE_TASK_NAME: string = '保证睡眠';
+  static readonly SIT_REMIND_TASK_NAME: string = '久坐提醒';
+  static readonly STRETCH_TASK_NAME: string = '每日拉伸';
+  static readonly DIET_TASK_NAME: string = '健康饮食';
+  static readonly MOOD_TASK_NAME: string = '情绪记录';
+  static readonly WEIGHT_TASK_NAME: string = '定期测体重';
+  static readonly RUN_TASK_NAME: string = '跑步1公里';
+
+  static readonly BRUSH_TEETH_CONTENT_NEW: string = '早晚各刷牙1次';
+  static readonly STEP_CONTENT: string = '今日步数未达标';
+  static readonly EXERCISE_CONTENT: string = '运动时间到啦';
+  static readonly SLEEP_EARLY_CONTENT: string = '早睡早起身体好';
+  static readonly SLEEP_ENSURE_CONTENT: string = '保证睡眠时间';
+  static readonly SIT_REMIND_CONTENT: string = '该起来活动一下';
+  static readonly STRETCH_CONTENT: string = '该做拉伸运动了';
+  static readonly DIET_CONTENT: string = '注意健康饮食';
+  static readonly MOOD_CONTENT: string = '记录今天的心情';
+  static readonly WEIGHT_CONTENT: string = '该测体重了';
+  static readonly RUN_CONTENT: string = '今天的跑步目标还未完成';
+
+  static readonly ALLOW_EDIT_PAST_KEY: string = 'allowEditPast';
+  static readonly ALLOW_EDIT_PAST_DEFAULT: boolean = false;
 }
 
 export enum TaskType {
-  Getup = 'getup',
-  Drink= 'drink',
-  Apple = 'apple',
+  BrushTeeth = 'brushTeeth',
   Smile = 'smile',
-  Clean = 'clean',
-  Sleep = 'sleep'
+  DrinkWater = 'drinkWater',
+  Step = 'step',
+  Exercise = 'exercise',
+  SleepEarly = 'sleepEarly',
+  SleepEnsure = 'sleepEnsure',
+  SitRemind = 'sitRemind',
+  Stretch = 'stretch',
+  Diet = 'diet',
+  Mood = 'mood',
+  Weight = 'weight',
+  Run = 'run'
 }
 
 export enum Unit {
   Liter = 'L',
   Pcs = '个',
   Times = '次',
+  Minute = '分钟',
+  Hour = '小时',
+  Step = '步',
+  Kilometer = '公里',
   Empty = ''
 }

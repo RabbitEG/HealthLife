@@ -27,6 +27,7 @@ import { HomeStore } from '../viewmodel/HomeViewModel';
 import GlobalInfoApi from '../common/database/tables/GlobalInfoApi';
 import GlobalInfo from '../viewmodel/GlobalInfo';
 import { GlobalContext } from '../common/utils/GlobalContext';
+import { ProfilePage } from './ProfilePage';
 
 @Styles function allSize() {
   .width(Const.THOUSANDTH_1000)
@@ -98,10 +99,9 @@ struct Index {
 
   @Builder TabBuilder(index: number) {
     Column() {
-      Image(index === this.currentPage ? NavList[index].icon_selected : NavList[index].icon)
-        .width($r('app.float.default_24'))
-        .height($r('app.float.default_24'))
-        .objectFit(ImageFit.Contain);
+      Text(this.getTabIcon(index))
+        .fontSize($r('app.float.default_24'))
+        .fontColor(this.currentPage === index ? $r('app.color.blueColor') : $r('app.color.tabTitleColor'))
       Text(NavList[index].text)
         .fontSize($r('app.float.default_10'))
         .fontWeight(Const.FONT_WEIGHT_500)
@@ -110,10 +110,25 @@ struct Index {
     }.justifyContent(FlexAlign.Center).allSize()
   }
 
+  getTabIcon(index: number): string {
+    switch (index) {
+      case TabId.HOME:
+        return '☑';
+      case TabId.CALENDAR:
+        return '📅';
+      case TabId.ACHIEVEMENT:
+        return '🏆';
+      case TabId.PROFILE:
+        return '👤';
+      default:
+        return '·';
+    }
+  }
+
   build() {
     Tabs({ barPosition: BarPosition.End, controller: this.tabController }) {
       TabContent() {
-        HomeIndex({ homeStore: $homeStore, editedTaskInfo: $editedTaskInfo, editedTaskID: $editedTaskID })
+        HomeIndex({ homeStore: this.homeStore, editedTaskInfo: $editedTaskInfo, editedTaskID: $editedTaskID })
           .borderWidth({ bottom: 1 })
           .borderColor($r('app.color.primaryBgColor'))
       }
@@ -121,16 +136,19 @@ struct Index {
       .align(Alignment.Start)
 
       TabContent() {
+        MineIndex({ homeStore: this.homeStore })
+      }
+      .tabBar(this.TabBuilder(TabId.CALENDAR))
+
+      TabContent() {
         AchievementIndex()
       }
       .tabBar(this.TabBuilder(TabId.ACHIEVEMENT))
 
       TabContent() {
-        MineIndex()
-          .borderWidth({ bottom: 1 })
-          .borderColor($r('app.color.primaryBgColor'))
+        ProfilePage()
       }
-      .tabBar(this.TabBuilder(TabId.MINE))
+      .tabBar(this.TabBuilder(TabId.PROFILE))
     }
     .scrollable(false)
     .allSize()

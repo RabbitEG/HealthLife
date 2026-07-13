@@ -14,6 +14,7 @@
  */
 
 import router from '@ohos.router';
+import promptAction from '@ohos.promptAction';
 import HealthText from './HealthTextComponent';
 import AddBtn from '../view/home/AddBtnComponent';
 import { TaskCard } from '../view/home//TaskCardComponent';
@@ -26,6 +27,9 @@ import { HealthDataSrcMgr } from '../common/utils/HealthDataSrcMgr';
 import { BroadCast, BroadCastType } from '../common/utils/BroadCast';
 import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import AchievementInfo from '../viewmodel/AchievementInfo';
+import { MonthCalendarView } from './home/MonthCalendarComponent';
+import Logger from '../common/utils/Logger';
+import { dateToStr } from '../common/utils/Utils';
 
 const WHITE_COLOR_0X = 255;
 
@@ -53,24 +57,38 @@ function titleTextStyle() {
 export default struct HomeIndex {
   @Provide broadCast: BroadCast = HealthDataSrcMgr.getInstance().getBroadCast();
   @State naviAlpha: number = 0;
-  @Link homeStore: HomeStore;
+  @ObjectLink homeStore: HomeStore;
   @Link editedTaskInfo: ITaskItem;
   @Link @Watch('taskChange') editedTaskID: string;
+  @State showMonthCalendar: boolean = false;
   private scroller: Scroller = new Scroller();
   private yOffset: number = 0;
+
+  @StorageProp(Const.ALLOW_EDIT_PAST_KEY) allowEditPast: boolean = Const.ALLOW_EDIT_PAST_DEFAULT;
 
   taskChange() {
     this.homeStore.updateTaskInfoList(this.editedTaskInfo);
   }
 
+  isPastDate(): boolean {
+    if (this.homeStore.checkCurrentDay()) {
+      return false;
+    }
+    let today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let selected = new Date(this.homeStore.showDate);
+    selected.setHours(0, 0, 0, 0);
+    return selected.getTime() < today.getTime();
+  }
+
   taskItemAction(item: TaskInfo, isClick: boolean): void {
-    if (!this.homeStore.checkCurrentDay()) {
+    if (this.isPastDate() && !this.allowEditPast) {
       return;
     }
     if (isClick) {
       // click to clock
-      let callback: CustomDialogCallback = { confirmCallback: (taskTemp: TaskInfo) => {
-        this.onConfirm(taskTemp)
+      let callback: CustomDialogCallback = { confirmCallback: (taskTemp: TaskInfo, action: string, inputVal: string) => {
+        this.onConfirm(taskTemp, action, inputVal)
       }, cancelCallback: () => {
       } };
       this.broadCast.emit(BroadCastType.SHOW_TASK_DETAIL_DIALOG, [item, callback]);
@@ -83,13 +101,14 @@ export default struct HomeIndex {
       editTask.startTime = item.startTime;
       editTask.frequency = item.frequency;
       editTask.isOpen = item.isOpen;
+      editTask.date = dateToStr(new Date(this.homeStore.showDate));
       router.pushUrl({ url: 'pages/TaskEditPage', params: { params: JSON.stringify(editTask) } });
     }
   }
 
   //confirm clockL
-  onConfirm(task: TaskInfo) {
-    this.homeStore.taskClock(task).then((res: AchievementInfo) => {
+  onConfirm(task: TaskInfo, action: string = 'clock', inputVal: string = '') {
+    this.homeStore.taskClock(task, action, inputVal).then((res: AchievementInfo) => {
       if (res.showAchievement) {
         let achievementLevel = res.achievementLevel;
         if (achievementLevel) {
@@ -111,17 +130,27 @@ export default struct HomeIndex {
     }
   }
 
-  editTaskAction() {
-    if (this.homeStore.checkCurrentDay()) {
-      router.pushUrl({ url: 'pages/TaskListPage' });
+  editTaskAction(): void {
+    if (this.isPastDate() && !this.allowEditPast) {
+      promptAction.showToast({ message: $r('app.string.past_edit_disabled') });
+      return;
     }
+    router.pushUrl({
+      url: 'pages/TaskListPage',
+      params: { targetDate: dateToStr(new Date(this.homeStore.showDate)) }
+    }).catch((error: Error) => {
+      Logger.error('HomeIndex', `open task list failed: ${JSON.stringify(error)}`);
+    });
   }
 
   build() {
     Stack() {
       Scroll(this.scroller) {
         Column() {
-          HomeTopView({ homeStore: $homeStore })
+          HomeTopView({
+            homeStore: this.homeStore,
+            openMonthAction: () => this.showMonthCalendar = true
+          })
           Text($r('app.string.task_list')).titleTextStyle()
           if (this.homeStore.getTaskListOfDay().length > 0) {
             Column({ space: Const.DEFAULT_8 }) {
@@ -177,6 +206,14 @@ export default struct HomeIndex {
       .backgroundColor(`rgba(${WHITE_COLOR_0X},${WHITE_COLOR_0X},${WHITE_COLOR_0X},${this.naviAlpha})`)
 
       CustomDialogView()
+      if (this.showMonthCalendar) {
+        MonthCalendarView({
+          homeStore: this.homeStore,
+          closeAction: () => this.showMonthCalendar = false
+        })
+          .position({ x: 0, y: 0 })
+          .zIndex(Const.HOME_BTN_Z + 1)
+      }
     }
     .allSize()
     .backgroundColor($r('app.color.primaryBgColor'))

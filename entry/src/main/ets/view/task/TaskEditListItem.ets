@@ -15,7 +15,7 @@
 
 import { ITaskItem } from '../../model/TaskInitList';
 import { CommonConstants as Const } from '../../common/constants/CommonConstants';
-import { taskType } from '../../viewmodel/TaskInfo';
+import { TaskTypeEnum } from '../../viewmodel/TaskInfo';
 
 @Extend(Text) function targetSetCommon() {
   .fontSize(Const.DEFAULT_16)
@@ -24,8 +24,8 @@ import { taskType } from '../../viewmodel/TaskInfo';
   .align(Alignment.End)
 }
 
-@Extend(Text) function targetSettingStyle(isOpen: boolean, taskID: number) {
-  .fontColor(isOpen && taskID !== taskType.smile && taskID !== taskType.brushTeeth ?
+@Extend(Text) function targetSettingStyle(isOpen: boolean, taskName: string, taskType: number) {
+  .fontColor(isOpen && taskType !== TaskTypeEnum.SUB_TASK ?
   $r('app.color.titleColor') :
   $r('app.color.disabledColor'))
 }
@@ -78,11 +78,13 @@ export struct TargetSetItem {
       if (this.settingParams?.unit === '') {
         Text(`${this.settingParams?.targetValue}`)
           .targetSetCommon()
-          .targetSettingStyle(this.settingParams?.isOpen, this.settingParams?.taskID)
+          .targetSettingStyle(this.settingParams?.isOpen, this.settingParams?.taskName,
+            this.settingParams?.taskType)
       } else {
         Text(`${this.settingParams?.targetValue} ${this.settingParams?.unit} ${Const.PER_DAY}`)
           .targetSetCommon()
-          .targetSettingStyle(this.settingParams?.isOpen, this.settingParams?.taskID)
+          .targetSettingStyle(this.settingParams?.isOpen, this.settingParams?.taskName,
+            this.settingParams?.taskType)
       }
       Image($r('app.media.ic_right_grey')).width(Const.DEFAULT_8).height(Const.DEFAULT_16);
     }

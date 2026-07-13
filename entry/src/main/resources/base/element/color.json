@@ -95,6 +95,78 @@
     {
       "name": "progress_column_color",
       "value": "#0d000000"
+    },
+    {
+      "name": "calendarSelectedBg",
+      "value": "#007DFF"
+    },
+    {
+      "name": "calendarTodayBg",
+      "value": "#E6F0FF"
+    },
+    {
+      "name": "calendarDayText",
+      "value": "#182431"
+    },
+    {
+      "name": "calendarOtherMonthText",
+      "value": "#C4C7CC"
+    },
+    {
+      "name": "progressDoneColor",
+      "value": "#64BB5C"
+    },
+    {
+      "name": "progressHalfColor",
+      "value": "#F7B500"
+    },
+    {
+      "name": "progressNoneColor",
+      "value": "#E92F4F"
+    },
+    {
+      "name": "achievementUnlockedBg",
+      "value": "#FFF8E6"
+    },
+    {
+      "name": "achievementLockedBg",
+      "value": "#F1F3F5"
+    },
+    {
+      "name": "taskCardBg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "taskTypeCount",
+      "value": "#FF6B6B"
+    },
+    {
+      "name": "taskTypeValue",
+      "value": "#4ECDC4"
+    },
+    {
+      "name": "taskTypeDuration",
+      "value": "#45B7D1"
+    },
+    {
+      "name": "taskTypeTimepoint",
+      "value": "#96CEB4"
+    },
+    {
+      "name": "taskTypeTimeperiod",
+      "value": "#FFEAA7"
+    },
+    {
+      "name": "taskTypeSubtask",
+      "value": "#DDA0DD"
+    },
+    {
+      "name": "taskTypeAutoSync",
+      "value": "#98D8C8"
+    },
+    {
+      "name": "taskTypeCycle",
+      "value": "#F7DC6F"
     }
   ]
 }

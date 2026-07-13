@@ -1,0 +1,6 @@
+# HarmonyOS / DevEco generated files
+.hvigor/
+build/
+oh_modules/
+*.hap
+local.properties

@@ -17,6 +17,7 @@ import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import { BadgePanel } from './BadgePanelComponent';
 import { TitleBar } from './TitleBarComponent';
 import Logger from '../common/utils/Logger';
+import { TaskAchievementPanel } from './TaskAchievementPanelComponent';
 
 @Component
 export struct AchievementIndex {
@@ -29,9 +30,22 @@ export struct AchievementIndex {
   }
 
   build() {
-    Column({space: Const.DEFAULT_20}) {
+    Column() {
       TitleBar()
-      BadgePanel()
+      Scroll() {
+        Column({ space: Const.DEFAULT_20 }) {
+          Text('连续打卡奖章')
+            .fontSize($r('app.float.default_20'))
+            .fontWeight(Const.FONT_WEIGHT_700)
+            .fontColor($r('app.color.white'))
+            .width(Const.FULL_WIDTH)
+          BadgePanel()
+          TaskAchievementPanel()
+        }
+        .padding({ bottom: Const.DEFAULT_20 })
+      }
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
     }
     .padding(Const.DEFAULT_10)
     .height(Const.FULL_HEIGHT)

@@ -1,36 +1,23 @@
-/*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
- * Licensed under the Apache License,Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import display from '@ohos.display';
-import WeekCalendarMethods, { ScrollTo } from '../../viewmodel/CalendarViewModel';
+import { ScrollTo } from '../../viewmodel/CalendarViewModel';
 import { HomeStore } from '../../viewmodel/HomeViewModel';
 import HealthText from '../../view/HealthTextComponent';
-import { WeekDateModel } from '../../model/WeekCalendarModel';
-import { sameDate } from '../../common/utils/Utils';
+import { WeekDateModel, WEEK_DAY_NUM } from '../../model/WeekCalendarModel';
+import { sameDate, dateToStr } from '../../common/utils/Utils';
 import { CommonConstants as Const } from '../../common/constants/CommonConstants';
 import Logger from '../../common/utils/Logger';
 
 export const WEEK_DAY_WIDTH: number = 100 / Const.WEEK_DAY_NUM;
 
-const DEFAULT_SCROLL_WIDTH = 336; // default calendar width
-const DEFAULT_SCROLL_PERCENT = 0.934; // default calendar width percent
+const DEFAULT_SCROLL_WIDTH = 336;
+const DEFAULT_SCROLL_PERCENT = 0.934;
+const WEEK_LABELS: string[] = ['一', '二', '三', '四', '五', '六', '日'];
 
 @Component
 export struct WeekCalendar {
-  @Link homeStore: HomeStore;
-  currentPage: number = 1;
+  @ObjectLink homeStore: HomeStore;
+  openMonthAction: Function = () => {};
+  currentPage: number = 0;
   private scroller: Scroller = new Scroller();
   scrollWidth: number = DEFAULT_SCROLL_WIDTH;
   private isLoadMore: boolean = false;
@@ -44,7 +31,6 @@ export struct WeekCalendar {
     } catch (err) {
       Logger.error('HomeIndex->onScrollEnd', JSON.stringify(err));
     }
-    this.homeStore.setSelectedShowDate(new Date().getTime());
   }
 
   getProgressImg(item: WeekDateModel): Resource {
@@ -58,46 +44,162 @@ export struct WeekCalendar {
     return $r('app.media.ic_home_half_done');
   }
 
-  @Builder
-  ArrowIcon(isRight: boolean) {
-    Row() {
-      Image($r('app.media.ic_right_grey'))
-        .width($r('app.float.default_6'))
-        .height($r('app.float.default_12'))
+  getCurrentWeekStartIndex(): number {
+    const selectedDateStr = dateToStr(new Date(this.homeStore.showDate));
+    const selectedIndex = this.homeStore.dateArr.findIndex((item: WeekDateModel) => item.dateStr === selectedDateStr);
+    if (selectedIndex >= 0) {
+      return Math.floor(selectedIndex / Const.WEEK_DAY_NUM) * Const.WEEK_DAY_NUM;
     }
-    .width($r('app.float.default_20'))
-    .height($r('app.float.default_20'))
-    .rotate({ z: 1, angle: isRight ? 0 : Const.DEFAULT_180 })
-    .justifyContent(FlexAlign.Center)
-    .onClick(() => isRight ?
-      WeekCalendarMethods.goToNextWeek(this.currentPage, this.isPageScroll, this.homeStore, this.scroller) :
-      WeekCalendarMethods.gotoPreviousWeek(this.isPageScroll, this.homeStore, this.currentPage, this.scroller))
+    let page = Math.round(this.scroller.currentOffset().xOffset / this.scrollWidth);
+    page = (this.isLoadMore === true) ? page + 1 : page;
+    return Const.WEEK_DAY_NUM * page;
+  }
+
+  getDateIndex(dateTime: number): number {
+    const dateStr = dateToStr(new Date(dateTime));
+    return this.homeStore.dateArr.findIndex((item: WeekDateModel) => item.dateStr === dateStr);
+  }
+
+  scrollToDate(dateTime: number) {
+    const targetIndex = this.getDateIndex(dateTime);
+    if (targetIndex < 0) {
+      return;
+    }
+    const page = Math.floor(targetIndex / Const.WEEK_DAY_NUM);
+    this.currentPage = Math.max(0,
+      Math.floor(this.homeStore.dateArr.length / Const.WEEK_DAY_NUM) - page - 1);
+    this.scroller.scrollTo({ xOffset: page * this.scrollWidth, yOffset: 0 } as ScrollTo);
+  }
+
+  gotoPreviousWeek() {
+    this.isPageScroll = true;
+    let date: Date = new Date(this.homeStore.showDate);
+    const targetDate = new Date(date);
+    targetDate.setDate(targetDate.getDate() - Const.WEEK_DAY_NUM);
+    const targetTime = targetDate.getTime();
+    if (this.getDateIndex(targetTime) < 0) {
+      this.homeStore.getPreWeekData(date, () => {
+        this.homeStore.setSelectedShowDate(targetTime);
+        this.scrollToDate(targetTime);
+        this.isPageScroll = false;
+      });
+    } else {
+      this.homeStore.setSelectedShowDate(targetTime);
+      this.scrollToDate(targetTime);
+      this.isPageScroll = false;
+    }
+  }
+
+  goToNextWeek() {
+    const targetDate = new Date(this.homeStore.showDate);
+    targetDate.setDate(targetDate.getDate() + Const.WEEK_DAY_NUM);
+    const targetTime = targetDate.getTime();
+    // The current week already contains dates later than today. Whether the
+    // right arrow is available is therefore determined by loaded calendar
+    // data, not by comparing the selected weekday with the current instant.
+    if (this.getDateIndex(targetTime) < 0) {
+      return;
+    }
+    this.isPageScroll = true;
+    this.homeStore.setSelectedShowDate(targetTime);
+    this.scrollToDate(targetTime);
+    this.isPageScroll = false;
+  }
+
+  goBackToToday() {
+    let today = new Date();
+    this.homeStore.setSelectedShowDate(today.getTime());
+    this.homeStore.initData();
+    this.currentPage = 0;
+    this.scroller.scrollTo({ xOffset: 0, yOffset: 0 } as ScrollTo);
+  }
+
+  onWeekLabelClick(dayIndex: number) {
+    let startIdx = this.getCurrentWeekStartIndex();
+    let targetIdx = startIdx + dayIndex;
+    if (targetIdx >= 0 && targetIdx < this.homeStore.dateArr.length) {
+      let item = this.homeStore.dateArr[targetIdx];
+      this.homeStore.setSelectedShowDate(item.date.getTime());
+    }
+  }
+
+  isTodayShown(): boolean {
+    return sameDate(new Date(), this.homeStore.showDate);
   }
 
   build() {
     Row() {
       Column() {
         Row() {
-          this.ArrowIcon(false)
+          Row() {
+            Image($r('app.media.ic_right_grey'))
+              .width($r('app.float.default_6'))
+              .height($r('app.float.default_12'))
+          }
+          .width($r('app.float.default_28'))
+          .height($r('app.float.default_28'))
+          .rotate({ z: 1, angle: Const.DEFAULT_180 })
+          .justifyContent(FlexAlign.Center)
+          .borderRadius(Const.DEFAULT_14)
+          .onClick(() => this.gotoPreviousWeek())
+
           HealthText({ title: this.homeStore.dateTitle, fontSize: $r('app.float.default_14') })
-            .margin($r('app.float.default_12'))
-          this.ArrowIcon(true)
+            .margin({ left: $r('app.float.default_8'), right: $r('app.float.default_8') })
+
+          Row() {
+            Image($r('app.media.ic_right_grey'))
+              .width($r('app.float.default_6'))
+              .height($r('app.float.default_12'))
+          }
+          .width($r('app.float.default_28'))
+          .height($r('app.float.default_28'))
+          .justifyContent(FlexAlign.Center)
+          .borderRadius(Const.DEFAULT_14)
+          .onClick(() => this.goToNextWeek())
+
+          Text('📅')
+            .fontSize($r('app.float.default_20'))
+            .fontColor($r('app.color.blueColor'))
+            .margin({ left: $r('app.float.default_12') })
+            .onClick(() => this.openMonthAction())
+
+          if (!this.isTodayShown()) {
+            Text($r('app.string.back_to_today'))
+              .fontSize($r('app.float.default_12'))
+              .fontColor($r('app.color.blueColor'))
+              .margin({ left: $r('app.float.default_12') })
+              .onClick(() => this.goBackToToday())
+          }
         }
         .justifyContent(FlexAlign.Center)
+
+        Row() {
+          ForEach(WEEK_LABELS, (title: string, index?: number) => {
+            Text(title)
+              .width(`${WEEK_DAY_WIDTH}%`)
+              .textAlign(TextAlign.Center)
+              .fontSize($r('app.float.default_12'))
+              .fontWeight(Const.FONT_WEIGHT_500)
+              .fontColor(this.getSelectedWeekDayIndex() === index ?
+                $r('app.color.blueColor') : $r('app.color.titleColor'))
+              .fontFamily($r('app.string.HarmonyHeiTi_Medium'))
+              .opacity(Const.OPACITY_6)
+              .onClick(() => {
+                if (index !== undefined) {
+                  this.onWeekLabelClick(index);
+                }
+              })
+          }, (title: string, index?: number) => `${title}_${index}`)
+        }
+        .width(Const.THOUSANDTH_1000)
+        .margin({ top: $r('app.float.default_8') })
 
         Scroll(this.scroller) {
           Row() {
             ForEach(this.homeStore.dateArr, (item: WeekDateModel, index?: number) => {
               Column() {
-                Text(item.weekTitle)
-                  .fontSize($r('app.float.default_12'))
-                  .fontWeight(Const.FONT_WEIGHT_500)
-                  .fontColor(sameDate(item.date, this.homeStore.showDate) ?
-                    $r('app.color.blueColor') : $r('app.color.titleColor'))
-                  .fontFamily($r('app.string.HarmonyHeiTi_Medium'))
-                  .opacity(Const.OPACITY_6)
                 Divider()
-                  .margin({ top: Const.DEFAULT_2, bottom: $r('app.float.default_4') })
+                  .margin({ bottom: $r('app.float.default_4') })
                   .width($r('app.float.default_12'))
                   .color(sameDate(item.date, this.homeStore.showDate) ? $r('app.color.blueColor') : $r('app.color.white'))
                 Image(this.getProgressImg(item))
@@ -107,7 +209,7 @@ export struct WeekCalendar {
               }
               .width(`${WEEK_DAY_WIDTH}%`)
               .justifyContent(FlexAlign.SpaceBetween)
-              .onClick(() => WeekCalendarMethods.calenderItemClickAction(item, index, this.homeStore))
+              .onClick(() => this.homeStore.setSelectedShowDate(item.date.getTime()))
             })
           }
         }
@@ -127,6 +229,12 @@ export struct WeekCalendar {
     .width(Const.THOUSANDTH_1000)
     .height(Const.THOUSANDTH_420)
     .padding(Const.THOUSANDTH_33)
+  }
+
+  getSelectedWeekDayIndex(): number {
+    let selectedDate = new Date(this.homeStore.showDate);
+    let dayOfWeek = selectedDate.getDay();
+    return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   }
 
   onScrollEndAction() {

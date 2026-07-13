@@ -1,71 +1,87 @@
-/*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
- * Licensed under the Apache License,Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import { oneWeekDictFunc } from '../common/utils/Utils';
 
-/**
- * TaskInfo
- *
- * @param id
- * @param date
- * @param taskID
- * @param targetValue
- * @param isAlarm
- * @param startTime
- * @param endTime
- * @param frequency
- * @param isDone
- * @param doneValue
- * @param isOpen
- */
-export default class TaskInfo {
-    id: number;
-    date: string;
-    taskID: number;
-    targetValue: string;
-    isAlarm: boolean;
-    startTime: string;
-    endTime: string;
-    frequency: string;
-    isDone: boolean;
-    finValue: string;
-    isOpen: boolean;
-
-    constructor(id: number, date: string, taskID: number, targetValue: string, isAlarm: boolean, startTime: string,
-                endTime: string, frequency: string, isDone: boolean, finValue: string, isOpen = false) {
-        this.id = id;
-        this.date = date;
-        this.taskID = taskID;
-        this.targetValue = targetValue;
-        this.isAlarm = isAlarm;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.frequency = frequency;
-        this.isDone = isDone;
-        this.finValue = finValue;
-        this.isOpen = isOpen;
-    }
+export class SubTaskInfo {
+  name: string = '';
+  isDone: boolean = false;
 }
 
-export enum taskType {
-    'getup' = 1,
-    'drinkWater',
-    'eatApple',
-    'smile',
-    'brushTeeth',
-    'sleepEarly'
+export enum TaskTypeEnum {
+  COUNT = 1,
+  VALUE = 2,
+  DURATION = 3,
+  TIME_POINT = 4,
+  TIME_PERIOD = 5,
+  SUB_TASK = 6,
+  AUTO_SYNC = 7,
+  CYCLE = 8
+}
+
+export enum TaskStatus {
+  NOT_STARTED = 0,
+  IN_PROGRESS = 1,
+  COMPLETED = 2,
+  SKIPPED = 3,
+  EXPIRED = 4,
+  PAUSED = 5
+}
+
+export default class TaskInfo {
+  id: number = 0;
+  date: string = '';
+  taskID: number = 0;
+  taskName: string = '';
+  taskType: number = 0;
+  targetValue: string = '';
+  finValue: string = '';
+  unit: string = '';
+  isAlarm: boolean = false;
+  startTime: string = '';
+  endTime: string = '';
+  frequency: string = '';
+  isDone: boolean = false;
+  isOpen: boolean = false;
+  status: number = 0;
+  subTasks: string = '';
+  cycleDays: string = '';
+  cycleTarget: number = 0;
+  dataSrc: string = '';
+  inputHistory: string = '';
+
+  constructor(
+    id: number, date: string, taskID: number, taskName: string, taskType: number,
+    targetValue: string, finValue: string, unit: string, isAlarm: boolean,
+    startTime: string, endTime: string, frequency: string, isDone: boolean,
+    isOpen: boolean, status: number, subTasks: string, cycleDays: string,
+    cycleTarget: number, dataSrc: string
+  ) {
+    this.id = id;
+    this.date = date;
+    this.taskID = taskID;
+    this.taskName = taskName;
+    this.taskType = taskType;
+    this.targetValue = targetValue;
+    this.finValue = finValue;
+    this.unit = unit;
+    this.isAlarm = isAlarm;
+    this.startTime = startTime;
+    this.endTime = endTime;
+    this.frequency = frequency;
+    this.isDone = isDone;
+    this.isOpen = isOpen;
+    this.status = status;
+    this.subTasks = subTasks;
+    this.cycleDays = cycleDays;
+    this.cycleTarget = cycleTarget;
+    this.dataSrc = dataSrc;
+  }
+
+  static create(taskID: number, date: string): TaskInfo {
+    return new TaskInfo(
+      0, date, taskID, '', 0, '', '', '', false,
+      '', '', '', false, false, TaskStatus.NOT_STARTED,
+      '', '', 0, ''
+    );
+  }
 }
 
 export const oneWeek = oneWeekDictFunc();

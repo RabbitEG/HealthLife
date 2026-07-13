@@ -6,11 +6,11 @@
     },
     {
       "name": "EntryAbility_desc",
-      "value": "There's always a new way to play sports."
+      "value": "A task management app for building healthy lifestyle habits"
     },
     {
       "name": "EntryAbility_label",
-      "value": "Healthy living"
+      "value": "HealthLife"
     },
     {
       "name": "EntryFormAbility_desc",
@@ -21,8 +21,484 @@
       "value": "form_label"
     },
     {
+      "name": "tab_home",
+      "value": "Tasks"
+    },
+    {
+      "name": "tab_mine",
+      "value": "Calendar"
+    },
+    {
+      "name": "tab_achievement",
+      "value": "Achievements"
+    },
+    {
+      "name": "tab_profile",
+      "value": "Me"
+    },
+    {
+      "name": "task_list",
+      "value": "Today's Tasks"
+    },
+    {
+      "name": "no_task",
+      "value": "No tasks yet, please add a task"
+    },
+    {
+      "name": "task_morning",
+      "value": "Wake up early"
+    },
+    {
+      "name": "task_apple",
+      "value": "Eat an apple"
+    },
+    {
+      "name": "task_water",
+      "value": "Drink water"
+    },
+    {
+      "name": "task_smile",
+      "value": "Smile daily"
+    },
+    {
+      "name": "task_brush",
+      "value": "Brush teeth daily"
+    },
+    {
+      "name": "task_night",
+      "value": "Sleep early"
+    },
+    {
+      "name": "task_done",
+      "value": "Completed"
+    },
+    {
+      "name": "task_achievement_level",
+      "value": "Achieved %d days in a row"
+    },
+    {
+      "name": "already_open",
+      "value": "Already enabled"
+    },
+    {
+      "name": "target_setting",
+      "value": "Goal Setting"
+    },
+    {
+      "name": "open_reminder",
+      "value": "Enable Reminder"
+    },
+    {
+      "name": "remind_time",
+      "value": "Reminder Time"
+    },
+    {
+      "name": "frequency",
+      "value": "Reminder Frequency"
+    },
+    {
+      "name": "set_your_frequency",
+      "value": "Set your frequency"
+    },
+    {
+      "name": "target_progress",
+      "value": "Goal Progress"
+    },
+    {
+      "name": "mine_personal_data",
+      "value": "Personal Data"
+    },
+    {
+      "name": "mine_check_updates",
+      "value": "Check for Updates"
+    },
+    {
+      "name": "mine_about",
+      "value": "About"
+    },
+    {
+      "name": "achievement",
+      "value": "My Achievements"
+    },
+    {
+      "name": "task_brush_teeth",
+      "value": "Brush teeth daily"
+    },
+    {
+      "name": "task_drink_water",
+      "value": "Drink water daily"
+    },
+    {
+      "name": "task_steps",
+      "value": "Daily steps"
+    },
+    {
+      "name": "task_exercise",
+      "value": "Daily exercise"
+    },
+    {
+      "name": "task_sleep_early",
+      "value": "Sleep early"
+    },
+    {
+      "name": "task_sleep_well",
+      "value": "Ensure good sleep"
+    },
+    {
+      "name": "task_sit_reminder",
+      "value": "Sedentary reminder"
+    },
+    {
+      "name": "task_stretch",
+      "value": "Daily stretch"
+    },
+    {
+      "name": "task_healthy_diet",
+      "value": "Healthy diet"
+    },
+    {
+      "name": "task_mood_record",
+      "value": "Mood record"
+    },
+    {
+      "name": "task_weight",
+      "value": "Weigh regularly"
+    },
+    {
+      "name": "type_count",
+      "value": "Count type"
+    },
+    {
+      "name": "type_value",
+      "value": "Value type"
+    },
+    {
+      "name": "type_duration",
+      "value": "Duration type"
+    },
+    {
+      "name": "type_timepoint",
+      "value": "Time point type"
+    },
+    {
+      "name": "type_timeperiod",
+      "value": "Time period type"
+    },
+    {
+      "name": "type_subtask",
+      "value": "Subtask type"
+    },
+    {
+      "name": "type_auto_sync",
+      "value": "Auto sync type"
+    },
+    {
+      "name": "type_cycle",
+      "value": "Cycle type"
+    },
+    {
+      "name": "calendar_title",
+      "value": "Calendar"
+    },
+    {
+      "name": "calendar_month_format",
+      "value": "%d/%d"
+    },
+    {
+      "name": "calendar_today",
+      "value": "Today"
+    },
+    {
+      "name": "calendar_no_record",
+      "value": "No records"
+    },
+    {
+      "name": "achievement_title",
+      "value": "Achievements"
+    },
+    {
+      "name": "achievement_first_task",
+      "value": "First task completed"
+    },
+    {
+      "name": "achievement_3_days",
+      "value": "3-day streak"
+    },
+    {
+      "name": "achievement_7_days",
+      "value": "7-day streak"
+    },
+    {
+      "name": "achievement_30_days",
+      "value": "30-day streak"
+    },
+    {
+      "name": "achievement_50_tasks",
+      "value": "50 tasks completed"
+    },
+    {
+      "name": "achievement_all_in_day",
+      "value": "All tasks in one day"
+    },
+    {
+      "name": "achievement_all_type",
+      "value": "All tasks of one type completed"
+    },
+    {
+      "name": "achievement_unlocked",
+      "value": "Unlocked"
+    },
+    {
+      "name": "achievement_locked",
+      "value": "Locked"
+    },
+    {
+      "name": "achievement_consecutive_days",
+      "value": "Consecutive days"
+    },
+    {
+      "name": "achievement_total_tasks",
+      "value": "Total tasks completed"
+    },
+    {
+      "name": "status_not_started",
+      "value": "Not started"
+    },
+    {
+      "name": "status_in_progress",
+      "value": "In progress"
+    },
+    {
+      "name": "status_completed",
+      "value": "Completed"
+    },
+    {
+      "name": "status_skipped",
+      "value": "Skipped"
+    },
+    {
+      "name": "status_expired",
+      "value": "Expired"
+    },
+    {
+      "name": "status_paused",
+      "value": "Paused"
+    },
+    {
+      "name": "add_task",
+      "value": "Add task"
+    },
+    {
+      "name": "edit_task",
+      "value": "Edit task"
+    },
+    {
+      "name": "delete_task",
+      "value": "Delete task"
+    },
+    {
+      "name": "delete_confirm",
+      "value": "Are you sure you want to delete this task?"
+    },
+    {
+      "name": "quick_complete",
+      "value": "Quick complete"
+    },
+    {
+      "name": "undo",
+      "value": "Undo"
+    },
+    {
+      "name": "save",
+      "value": "Save"
+    },
+    {
+      "name": "progress_format",
+      "value": "%s / %s"
+    },
+    {
+      "name": "subtask_progress",
+      "value": "%d / %d"
+    },
+    {
+      "name": "unit_times",
+      "value": "times"
+    },
+    {
+      "name": "unit_ml",
+      "value": "mL"
+    },
+    {
+      "name": "unit_minutes",
+      "value": "minutes"
+    },
+    {
+      "name": "unit_steps",
+      "value": "steps"
+    },
+    {
+      "name": "unit_hours",
+      "value": "hours"
+    },
+    {
+      "name": "unit_pages",
+      "value": "pages"
+    },
+    {
+      "name": "unit_kg",
+      "value": "kg"
+    },
+    {
+      "name": "reminder_settings",
+      "value": "Reminder Settings"
+    },
+    {
+      "name": "every_day",
+      "value": "Every day"
+    },
+    {
+      "name": "workday",
+      "value": "Workdays"
+    },
+    {
+      "name": "weekend",
+      "value": "Weekends"
+    },
+    {
+      "name": "custom_week",
+      "value": "Custom days"
+    },
+    {
+      "name": "specify_time",
+      "value": "Specific time"
+    },
+    {
+      "name": "interval",
+      "value": "Every"
+    },
+    {
+      "name": "weekly_times",
+      "value": "Times per week"
+    },
+    {
+      "name": "morning_brush",
+      "value": "Morning brush"
+    },
+    {
+      "name": "evening_brush",
+      "value": "Evening brush"
+    },
+    {
+      "name": "stretch_neck",
+      "value": "Neck"
+    },
+    {
+      "name": "stretch_back",
+      "value": "Back"
+    },
+    {
+      "name": "stretch_legs",
+      "value": "Legs"
+    },
+    {
+      "name": "diet_breakfast",
+      "value": "Breakfast"
+    },
+    {
+      "name": "diet_vegetable",
+      "value": "Vegetables"
+    },
+    {
+      "name": "diet_fruit",
+      "value": "Fruits"
+    },
+    {
+      "name": "diet_less_sugar",
+      "value": "Less sugar"
+    },
+    {
+      "name": "no_data",
+      "value": "No data"
+    },
+    {
+      "name": "template_title",
+      "value": "Select task template"
+    },
+    {
+      "name": "custom_task",
+      "value": "Custom task"
+    },
+    {
+      "name": "clock_in",
+      "value": "Check in"
+    },
+    {
+      "name": "got_it",
+      "value": "Got it"
+    },
+    {
+      "name": "sure",
+      "value": "OK"
+    },
+    {
+      "name": "confirm",
+      "value": "Confirm"
+    },
+    {
+      "name": "cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "complete",
+      "value": "Complete"
+    },
+    {
+      "name": "privacy_title",
+      "value": "Please enable \"XX\" permission in HealthLife permission management"
+    },
+    {
+      "name": "privacy_desc",
+      "value": "This feature supports XX... (feature description)"
+    },
+    {
+      "name": "jump_ad",
+      "value": "Skip ad %ds"
+    },
+    {
+      "name": "alert",
+      "value": "Warning"
+    },
+    {
+      "name": "alert_message",
+      "value": "Your system date is earlier than the latest check-in time!"
+    },
+    {
+      "name": "alert_button",
+      "value": "Exit"
+    },
+    {
+      "name": "Helvetica",
+      "value": "Helvetica"
+    },
+    {
+      "name": "PingFangSC_Regular",
+      "value": "PingFangSC-Regular"
+    },
+    {
+      "name": "HarmonyHeiTi",
+      "value": "HarmonyHeiTi"
+    },
+    {
+      "name": "HarmonyHeiTi_Bold",
+      "value": "HarmonyHeiTi-Bold"
+    },
+    {
+      "name": "HarmonyHeiTi_Medium",
+      "value": "HarmonyHeiTi-Medium"
+    },
+    {
       "name": "agencyNoTask",
-      "value": "Go to Healthy Living to add tasks"
+      "value": "Go to HealthLife to add tasks"
     },
     {
       "name": "task_reason",

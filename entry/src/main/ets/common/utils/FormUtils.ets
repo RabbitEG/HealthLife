@@ -23,7 +23,7 @@ import AgencyCardInfo from '../../viewmodel/AgencyCardInfo';
 import FormInfo from '../../viewmodel/FormInfo';
 import Logger from '../utils/Logger';
 import ProgressCardInfo from '../../viewmodel/ProgressCardInfo';
-import TaskInfo, { taskType } from '../../viewmodel/TaskInfo';
+import TaskInfo, { TaskTypeEnum } from '../../viewmodel/TaskInfo';
 import { columnDayInfoList, columnTaskInfoInfoList, columnFormInfoList } from '../../model/RdbColumnModel';
 import {
   CommonConstants as Const,
@@ -236,23 +236,44 @@ class FormUtils {
         finValueIsNull: item.isDone ? false : (item.finValue === '' ? true : false),
       };
       switch (item.taskID) {
-        case taskType.getup:
-          temp = this.getTemp(temp, TaskType.Getup, Unit.Empty, true, item.isDone);
+        case 1:
+          temp = this.getTemp(temp, TaskType.BrushTeeth, Unit.Times, false, item.isDone);
           break;
-        case taskType.drinkWater:
-          temp = this.getTemp(temp, TaskType.Drink, Unit.Liter, false, item.isDone);
-          break;
-        case taskType.eatApple:
-          temp = this.getTemp(temp, TaskType.Apple, Unit.Pcs, false, item.isDone);
-          break;
-        case taskType.smile:
+        case 2:
           temp = this.getTemp(temp, TaskType.Smile, Unit.Times, false, item.isDone);
           break;
-        case taskType.brushTeeth:
-          temp = this.getTemp(temp, TaskType.Clean, Unit.Times, false, item.isDone);
+        case 3:
+          temp = this.getTemp(temp, TaskType.DrinkWater, Unit.Liter, false, item.isDone);
           break;
-        case taskType.sleepEarly:
-          temp = this.getTemp(temp, TaskType.Sleep, Unit.Empty, true, item.isDone);
+        case 4:
+          temp = this.getTemp(temp, TaskType.Step, Unit.Step, false, item.isDone);
+          break;
+        case 5:
+          temp = this.getTemp(temp, TaskType.Exercise, Unit.Minute, false, item.isDone);
+          break;
+        case 6:
+          temp = this.getTemp(temp, TaskType.SleepEarly, Unit.Empty, true, item.isDone);
+          break;
+        case 7:
+          temp = this.getTemp(temp, TaskType.SleepEnsure, Unit.Hour, false, item.isDone);
+          break;
+        case 8:
+          temp = this.getTemp(temp, TaskType.SitRemind, Unit.Times, false, item.isDone);
+          break;
+        case 9:
+          temp = this.getTemp(temp, TaskType.Stretch, Unit.Times, false, item.isDone);
+          break;
+        case 10:
+          temp = this.getTemp(temp, TaskType.Diet, Unit.Times, false, item.isDone);
+          break;
+        case 11:
+          temp = this.getTemp(temp, TaskType.Mood, Unit.Times, false, item.isDone);
+          break;
+        case 12:
+          temp = this.getTemp(temp, TaskType.Weight, Unit.Times, false, item.isDone);
+          break;
+        case 13:
+          temp = this.getTemp(temp, TaskType.Run, Unit.Kilometer, false, item.isDone);
           break;
         default:
           break;

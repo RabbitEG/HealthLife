@@ -6,11 +6,11 @@
     },
     {
       "name": "EntryAbility_desc",
-      "value": "运动总有新玩法"
+      "value": "培养健康生活习惯的任务管理App"
     },
     {
       "name": "EntryAbility_label",
-      "value": "健康生活"
+      "value": "HealthLife"
     },
     {
       "name": "EntryFormAbility_desc",
@@ -19,6 +19,482 @@
     {
       "name": "EntryFormAbility_label",
       "value": "服务卡片"
+    },
+    {
+      "name": "tab_home",
+      "value": "任务"
+    },
+    {
+      "name": "tab_mine",
+      "value": "日历"
+    },
+    {
+      "name": "tab_achievement",
+      "value": "成就"
+    },
+    {
+      "name": "tab_profile",
+      "value": "我的"
+    },
+    {
+      "name": "task_list",
+      "value": "今日任务"
+    },
+    {
+      "name": "no_task",
+      "value": "暂无任务，请添加任务"
+    },
+    {
+      "name": "task_morning",
+      "value": "早起"
+    },
+    {
+      "name": "task_apple",
+      "value": "吃苹果"
+    },
+    {
+      "name": "task_water",
+      "value": "喝水"
+    },
+    {
+      "name": "task_smile",
+      "value": "每日微笑"
+    },
+    {
+      "name": "task_brush",
+      "value": "每日刷牙"
+    },
+    {
+      "name": "task_night",
+      "value": "早睡"
+    },
+    {
+      "name": "task_done",
+      "value": "已完成"
+    },
+    {
+      "name": "task_achievement_level",
+      "value": "连续%d天达成"
+    },
+    {
+      "name": "already_open",
+      "value": "已开启"
+    },
+    {
+      "name": "target_setting",
+      "value": "目标设置"
+    },
+    {
+      "name": "open_reminder",
+      "value": "开启提醒"
+    },
+    {
+      "name": "remind_time",
+      "value": "提醒时间"
+    },
+    {
+      "name": "frequency",
+      "value": "提醒频率"
+    },
+    {
+      "name": "set_your_frequency",
+      "value": "请设置您的频率"
+    },
+    {
+      "name": "target_progress",
+      "value": "目标进度"
+    },
+    {
+      "name": "mine_personal_data",
+      "value": "个人资料"
+    },
+    {
+      "name": "mine_check_updates",
+      "value": "检查更新"
+    },
+    {
+      "name": "mine_about",
+      "value": "关于"
+    },
+    {
+      "name": "achievement",
+      "value": "我的成就"
+    },
+    {
+      "name": "task_brush_teeth",
+      "value": "每日刷牙"
+    },
+    {
+      "name": "task_drink_water",
+      "value": "每日喝水"
+    },
+    {
+      "name": "task_steps",
+      "value": "每日步数"
+    },
+    {
+      "name": "task_exercise",
+      "value": "每日运动"
+    },
+    {
+      "name": "task_sleep_early",
+      "value": "早睡"
+    },
+    {
+      "name": "task_sleep_well",
+      "value": "保证睡眠"
+    },
+    {
+      "name": "task_sit_reminder",
+      "value": "久坐提醒"
+    },
+    {
+      "name": "task_stretch",
+      "value": "每日拉伸"
+    },
+    {
+      "name": "task_healthy_diet",
+      "value": "健康饮食"
+    },
+    {
+      "name": "task_mood_record",
+      "value": "情绪记录"
+    },
+    {
+      "name": "task_weight",
+      "value": "定期测体重"
+    },
+    {
+      "name": "type_count",
+      "value": "次数型"
+    },
+    {
+      "name": "type_value",
+      "value": "数值型"
+    },
+    {
+      "name": "type_duration",
+      "value": "时长型"
+    },
+    {
+      "name": "type_timepoint",
+      "value": "时间点型"
+    },
+    {
+      "name": "type_timeperiod",
+      "value": "时间段型"
+    },
+    {
+      "name": "type_subtask",
+      "value": "子任务型"
+    },
+    {
+      "name": "type_auto_sync",
+      "value": "自动同步型"
+    },
+    {
+      "name": "type_cycle",
+      "value": "周期型"
+    },
+    {
+      "name": "calendar_title",
+      "value": "日历"
+    },
+    {
+      "name": "calendar_month_format",
+      "value": "%d年%d月"
+    },
+    {
+      "name": "calendar_today",
+      "value": "今天"
+    },
+    {
+      "name": "calendar_no_record",
+      "value": "暂无记录"
+    },
+    {
+      "name": "achievement_title",
+      "value": "成就"
+    },
+    {
+      "name": "achievement_first_task",
+      "value": "首次完成任务"
+    },
+    {
+      "name": "achievement_3_days",
+      "value": "连续完成3天"
+    },
+    {
+      "name": "achievement_7_days",
+      "value": "连续完成7天"
+    },
+    {
+      "name": "achievement_30_days",
+      "value": "连续完成30天"
+    },
+    {
+      "name": "achievement_50_tasks",
+      "value": "累计完成50次任务"
+    },
+    {
+      "name": "achievement_all_in_day",
+      "value": "同一天完成全部任务"
+    },
+    {
+      "name": "achievement_all_type",
+      "value": "完成某一类型全部任务"
+    },
+    {
+      "name": "achievement_unlocked",
+      "value": "已解锁"
+    },
+    {
+      "name": "achievement_locked",
+      "value": "未解锁"
+    },
+    {
+      "name": "achievement_consecutive_days",
+      "value": "连续完成天数"
+    },
+    {
+      "name": "achievement_total_tasks",
+      "value": "累计完成次数"
+    },
+    {
+      "name": "status_not_started",
+      "value": "未开始"
+    },
+    {
+      "name": "status_in_progress",
+      "value": "进行中"
+    },
+    {
+      "name": "status_completed",
+      "value": "已完成"
+    },
+    {
+      "name": "status_skipped",
+      "value": "已跳过"
+    },
+    {
+      "name": "status_expired",
+      "value": "已过期"
+    },
+    {
+      "name": "status_paused",
+      "value": "已暂停"
+    },
+    {
+      "name": "add_task",
+      "value": "添加任务"
+    },
+    {
+      "name": "edit_task",
+      "value": "编辑任务"
+    },
+    {
+      "name": "delete_task",
+      "value": "删除任务"
+    },
+    {
+      "name": "delete_confirm",
+      "value": "确定删除此任务吗？"
+    },
+    {
+      "name": "quick_complete",
+      "value": "快捷完成"
+    },
+    {
+      "name": "undo",
+      "value": "撤销"
+    },
+    {
+      "name": "save",
+      "value": "保存"
+    },
+    {
+      "name": "progress_format",
+      "value": "%s / %s"
+    },
+    {
+      "name": "subtask_progress",
+      "value": "%d / %d"
+    },
+    {
+      "name": "unit_times",
+      "value": "次"
+    },
+    {
+      "name": "unit_ml",
+      "value": "mL"
+    },
+    {
+      "name": "unit_minutes",
+      "value": "分钟"
+    },
+    {
+      "name": "unit_steps",
+      "value": "步"
+    },
+    {
+      "name": "unit_hours",
+      "value": "小时"
+    },
+    {
+      "name": "unit_pages",
+      "value": "页"
+    },
+    {
+      "name": "unit_kg",
+      "value": "kg"
+    },
+    {
+      "name": "reminder_settings",
+      "value": "提醒设置"
+    },
+    {
+      "name": "every_day",
+      "value": "每天"
+    },
+    {
+      "name": "workday",
+      "value": "工作日"
+    },
+    {
+      "name": "weekend",
+      "value": "周末"
+    },
+    {
+      "name": "custom_week",
+      "value": "自定义星期"
+    },
+    {
+      "name": "specify_time",
+      "value": "指定时间点"
+    },
+    {
+      "name": "interval",
+      "value": "每隔"
+    },
+    {
+      "name": "weekly_times",
+      "value": "每周若干次"
+    },
+    {
+      "name": "morning_brush",
+      "value": "早晨刷牙"
+    },
+    {
+      "name": "evening_brush",
+      "value": "睡前刷牙"
+    },
+    {
+      "name": "stretch_neck",
+      "value": "颈部"
+    },
+    {
+      "name": "stretch_back",
+      "value": "腰背"
+    },
+    {
+      "name": "stretch_legs",
+      "value": "腿部"
+    },
+    {
+      "name": "diet_breakfast",
+      "value": "早餐"
+    },
+    {
+      "name": "diet_vegetable",
+      "value": "蔬菜"
+    },
+    {
+      "name": "diet_fruit",
+      "value": "水果"
+    },
+    {
+      "name": "diet_less_sugar",
+      "value": "少糖"
+    },
+    {
+      "name": "no_data",
+      "value": "暂无数据"
+    },
+    {
+      "name": "template_title",
+      "value": "选择任务模板"
+    },
+    {
+      "name": "custom_task",
+      "value": "自定义任务"
+    },
+    {
+      "name": "clock_in",
+      "value": "打卡"
+    },
+    {
+      "name": "got_it",
+      "value": "知道了"
+    },
+    {
+      "name": "sure",
+      "value": "确定"
+    },
+    {
+      "name": "confirm",
+      "value": "确认"
+    },
+    {
+      "name": "cancel",
+      "value": "取消"
+    },
+    {
+      "name": "complete",
+      "value": "完成"
+    },
+    {
+      "name": "privacy_title",
+      "value": "请在‘健康生活’权限管理中开启‘XX’权限"
+    },
+    {
+      "name": "privacy_desc",
+      "value": "该功能支持XX…（功能介绍）"
+    },
+    {
+      "name": "jump_ad",
+      "value": " 跳过广告 %ds"
+    },
+    {
+      "name": "alert",
+      "value": "警告"
+    },
+    {
+      "name": "alert_message",
+      "value": "您的系统日期早于最新的打卡时间！"
+    },
+    {
+      "name": "alert_button",
+      "value": "退出"
+    },
+    {
+      "name": "Helvetica",
+      "value": "Helvetica"
+    },
+    {
+      "name": "PingFangSC_Regular",
+      "value": "PingFangSC-Regular"
+    },
+    {
+      "name": "HarmonyHeiTi",
+      "value": "HarmonyHeiTi"
+    },
+    {
+      "name": "HarmonyHeiTi_Bold",
+      "value": "HarmonyHeiTi-Bold"
+    },
+    {
+      "name": "HarmonyHeiTi_Medium",
+      "value": "HarmonyHeiTi-Medium"
     },
     {
       "name": "agencyNoTask",

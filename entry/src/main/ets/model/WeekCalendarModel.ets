@@ -45,16 +45,14 @@ export function initializeOnStartUp(date: Date): WeekCalendarInfo {
   let weekCalendarInfo: WeekCalendarInfo = new WeekCalendarInfo();
   let arr: Array<WeekDateModel> = [];
   let strArr: Array<string> = [];
-  let currentDay = date.getDay() - 1;
-  if (date.getDay() === 0) {
-    currentDay = 6;
-  }
-  Logger.debug('WeekCalendarModel', date.toISOString());
+  const weekAnchor = new Date(date);
+  let currentDay = (weekAnchor.getDay() + WEEK_DAY_NUM - 1) % WEEK_DAY_NUM;
+  Logger.debug('WeekCalendarModel', weekAnchor.toISOString());
   // monday is first day of week
-  date.setDate(date.getDate() - currentDay)
+  weekAnchor.setDate(weekAnchor.getDate() - currentDay)
   for (let index = 0; index < WEEK_DAY_NUM; index++) {
-    let tempDate = new Date(date);
-    tempDate.setDate(date.getDate() + index);
+    let tempDate = new Date(weekAnchor);
+    tempDate.setDate(weekAnchor.getDate() + index);
     let dateStr = dateToStr(tempDate);
     strArr.push(dateStr);
     arr.push(new WeekDateModel(WEEK_TITLES[tempDate.getDay()], dateStr, tempDate))
@@ -75,12 +73,13 @@ export function getPreviousWeek(showDate: Date): WeekCalendarInfo {
   let weekCalendarInfo: WeekCalendarInfo = new WeekCalendarInfo();
   let arr: Array<WeekDateModel> = [];
   let strArr: Array<string> = [];
-  let currentDay = showDate.getDay() - 1;
+  const weekAnchor = new Date(showDate);
+  let currentDay = (weekAnchor.getDay() + WEEK_DAY_NUM - 1) % WEEK_DAY_NUM;
   // monday is first day of week
-  showDate.setDate(showDate.getDate() - currentDay);
+  weekAnchor.setDate(weekAnchor.getDate() - currentDay);
   for (let index = WEEK_DAY_NUM; index > 0; index--) {
-    let tempDate = new Date(showDate);
-    tempDate.setDate(showDate.getDate() - index);
+    let tempDate = new Date(weekAnchor);
+    tempDate.setDate(weekAnchor.getDate() - index);
     let dateStr = dateToStr(tempDate);
     strArr.push(dateStr);
     arr.push(new WeekDateModel(WEEK_TITLES[tempDate.getDay()], dateStr, tempDate));

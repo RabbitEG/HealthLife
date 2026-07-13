@@ -22,6 +22,7 @@ import {
   columnFormInfoList
 } from '../model/RdbColumnModel';
 import RdbUtils from '../common/database/rdb/RdbUtils';
+import ColumnInfo from '../viewmodel/ColumnInfo';
 import Logger from '../common/utils/Logger';
 import FormUtils from '../common/utils/FormUtils';
 import Want from '@ohos.app.ability.Want';
@@ -54,6 +55,9 @@ export default class EntryAbility extends UIAbility {
       Logger.info(`RdbHelper createTable taskInfo success`);
     }).catch((err: Error) => {
       Logger.error(`RdbHelper taskInfo err : ${JSON.stringify(err)}`);
+      RdbUtils.addTableColumn(Const.TASK_INFO.tableName ? Const.TASK_INFO.tableName : '', new ColumnInfo('inputHistory', 'text', -1, true, false, false)).catch((e: Error) => {
+        Logger.error(`RdbHelper addColumn inputHistory : ${JSON.stringify(e)}`);
+      });
     });
     RdbUtils.createTable(Const.FORM_INFO.tableName ? Const.FORM_INFO.tableName : '', columnFormInfoList)
       .catch((err: Error) => {

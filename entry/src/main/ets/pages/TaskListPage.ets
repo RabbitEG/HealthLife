@@ -18,6 +18,8 @@ import TaskList from '../view/task/TaskListComponent';
 import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import { getAllTask, taskIndexDataInit, taskOriginData } from '../viewmodel/TaskViewModel';
 import TaskInfo from '../viewmodel/TaskInfo';
+import router from '@ohos.router';
+import TaskInfoApi from '../common/database/tables/TaskInfoApi';
 
 @Entry
 @Component
@@ -25,11 +27,25 @@ import TaskInfo from '../viewmodel/TaskInfo';
 struct TaskIndex {
   @Provide taskList: ITaskItem[] = taskOriginData;
 
+  updateTaskList(taskData: TaskInfo[]): void {
+    let deepCopyDataStr = JSON.stringify(this.taskList);
+    let deepCopyData: ITaskItem[] = JSON.parse(deepCopyDataStr);
+    this.taskList = taskIndexDataInit(deepCopyData, taskData);
+  }
+
   onPageShow() {
+    const routeParams = (router.getParams() || {}) as Record<string, Object>;
+    const targetDate = routeParams.targetDate ? routeParams.targetDate as string : '';
+    if (targetDate) {
+      // The add list must reflect the selected day's enabled state, not today's
+      // global state, otherwise an already-open label can prevent a past-day add.
+      TaskInfoApi.query(targetDate, false, (res: TaskInfo[]) => {
+        this.updateTaskList(res);
+      });
+      return;
+    }
     getAllTask().then((res: TaskInfo[]) => {
-      let deepCopyDataStr = JSON.stringify(this.taskList);
-      let deepCopyData: ITaskItem[] = JSON.parse(deepCopyDataStr);
-      this.taskList = taskIndexDataInit(deepCopyData, res);
+      this.updateTaskList(res);
     })
   }
 

@@ -21,6 +21,7 @@ import DayInfoApi from '../common/database/tables/DayInfoApi';
 import GlobalInfoApi from '../common/database/tables/GlobalInfoApi';
 import TaskInfoApi from '../common/database/tables/TaskInfoApi';
 import Logger from '../common/utils/Logger';
+import { TaskList } from './TaskInitList';
 
 export class DatabaseModel {
   /**
@@ -58,14 +59,53 @@ export class DatabaseModel {
             Logger.info('AppStart', 'update globalInfo success: ' + JSON.stringify(newGlobalInfo));
           }
         });
-        self.queryPreInfo(date, preDate, result, callback);
+        Promise.all([
+          self.ensureTasksForDate(Const.GLOBAL_KEY),
+          self.ensureTasksForDate(date)
+        ]).then(() => {
+          self.queryPreInfo(date, preDate, result, callback);
+        });
       }
+    });
+  }
+
+  ensureTasksForDate(date: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+      TaskInfoApi.query(date, false, (existing: TaskInfo[]) => {
+        const missing = TaskList.filter((template: TaskInfo) => {
+          return !existing.some((item: TaskInfo) => item.taskID === template.taskID);
+        });
+        if (missing.length === 0) {
+          resolve();
+          return;
+        }
+        let pending = missing.length;
+        missing.forEach((template: TaskInfo) => {
+          const task = JSON.parse(JSON.stringify(template)) as TaskInfo;
+          task.id = 0;
+          task.date = date;
+          task.isOpen = false;
+          task.isAlarm = false;
+          task.isDone = false;
+          task.finValue = '';
+          TaskInfoApi.insertData(task, () => {
+            pending--;
+            if (pending === 0) {
+              resolve();
+            }
+          });
+        });
+      });
     });
   }
 
   insertGlobalTask() {
     for (let i = 0; i < Const.TASK_NUM; i++) {
-      let tmp = new TaskInfo(0, Const.GLOBAL_KEY, i + 1, '', false, '08: 00', '00: 00', '1,2,3,4,5,6,7', false, '');
+      let tmp = JSON.parse(JSON.stringify(TaskList[i])) as TaskInfo;
+      tmp.id = 0;
+      tmp.date = Const.GLOBAL_KEY;
+      tmp.isOpen = false;
+      tmp.isAlarm = false;
       TaskInfoApi.insertData(tmp, (isDone: number) => {
         if (isDone) {
           Logger.info('AppStart', 'Insert taskGlobalInfo success: ' + JSON.stringify(tmp));
@@ -76,7 +116,11 @@ export class DatabaseModel {
 
   insertTask(date: string) {
     for (let i = 0; i < Const.TASK_NUM; i++) {
-      let tmp = new TaskInfo(0, date, i + 1, '', false, '08: 00', '00: 00', '1,2,3,4,5,6,7', false, '');
+      let tmp = JSON.parse(JSON.stringify(TaskList[i])) as TaskInfo;
+      tmp.id = 0;
+      tmp.date = date;
+      tmp.isOpen = false;
+      tmp.isAlarm = false;
       TaskInfoApi.insertData(tmp, (isDone: number) => {
         if (isDone) {
           Logger.info('AppStart', 'Insert taskInfo success: ' + JSON.stringify(tmp));
@@ -100,7 +144,7 @@ export class DatabaseModel {
           dayInfo.targetTaskNum = this.calTaskNum(result);
           this.insertPreInfo(curDate, finDate, result, dayInfo);
           let finResult: TaskInfo[] = [];
-          for (let i = 0; i < 6; i++) {
+          for (let i = 0; i < Const.TASK_NUM; i++) {
             if (result[i].isOpen === true) {
               finResult.push(result[i]);
             }
@@ -135,7 +179,7 @@ export class DatabaseModel {
         }
       })
       for (let i = 0; i < Const.TASK_NUM; i++) {
-        let tmp = new TaskInfo(0, '', 0, '', false, '', '', '', false, '');
+        let tmp = TaskInfo.create(0, '');
         tmp = result[i];
         tmp.date = curDate.toDateString();
         TaskInfoApi.insertData(tmp, (isDone: number) => {

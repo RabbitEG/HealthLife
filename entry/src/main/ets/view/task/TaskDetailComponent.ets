@@ -20,7 +20,7 @@ import common from '@ohos.app.ability.common';
 import { ITaskItem } from '../../model/TaskInitList';
 import Logger from '../../common/utils/Logger';
 import { CommonConstants as Const } from '../../common/constants/CommonConstants';
-import TaskInfo, { taskType } from '../../viewmodel/TaskInfo';
+import TaskInfo, { TaskTypeEnum, TaskStatus } from '../../viewmodel/TaskInfo';
 import {
   TaskChooseItem,
   TargetSetItem,
@@ -66,9 +66,13 @@ export default struct TaskDetail {
     if (this.isChanged) {
       let context: Context = getContext(this) as common.Context;
       let taskInfo: TaskInfo = new TaskInfo(Const.ZERO, Const.GLOBAL_KEY, this.settingParams.taskID,
-        this.settingParams.targetValue, this.settingParams.isAlarm, this.settingParams.startTime,
-        this.settingParams.endTime, this.settingParams.frequency, false, '', this.settingParams.isOpen);
-      addTask(taskInfo, context).then((res: number) => {
+        this.settingParams.taskName, this.settingParams.taskType,
+        this.settingParams.targetValue, '', this.settingParams.unit,
+        this.settingParams.isAlarm, this.settingParams.startTime,
+        this.settingParams.endTime, this.settingParams.frequency, false,
+        this.settingParams.isOpen, TaskStatus.NOT_STARTED, this.settingParams.subTasks,
+        this.settingParams.cycleDays, this.settingParams.cycleTarget, this.settingParams.dataSrc);
+      addTask(taskInfo, context, this.settingParams.date).then((res: number) => {
         GlobalContext.getContext().setObject('taskListChange', true);
         router.back({
           url: 'pages/MainPage',
@@ -111,8 +115,9 @@ export default struct TaskDetail {
           .listItemStyle()
           .enabled(
             this.settingParams?.isOpen
-            && this.settingParams?.taskID !== taskType.smile
-            && this.settingParams?.taskID !== taskType.brushTeeth
+            && (this.settingParams?.taskName === Const.BRUSH_TEETH_TASK_NAME
+              || this.settingParams?.taskName === Const.SMILE_TASK_NAME
+              || this.settingParams?.taskType !== TaskTypeEnum.SUB_TASK)
           )
           .onClick(() => {
             this.broadCast.emit(

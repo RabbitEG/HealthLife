@@ -65,7 +65,6 @@ function goToNextWeek(currentPage: number, isPageScroll: Boolean, homeStore: Hom
 function calenderItemClickAction(item: WeekDateModel, index: number, homeStore: HomeStore) {
   Logger.info('HomeIndex', 'click the calendarItem: ' + JSON.stringify(item));
   homeStore.setSelectedShowDate(item.date.getTime());
-  homeStore.selectedDay = index % Const.WEEK_DAY_NUM;
 }
 
 const WeekCalendarMethods: WeekCalendarMethodInfo = new WeekCalendarMethodInfo();

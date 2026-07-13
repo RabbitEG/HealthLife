@@ -21,12 +21,19 @@ struct AgencyCard {
   @LocalStorageProp('taskList') taskList: AgencyCardInfo[] = [];
   @LocalStorageProp('showWidget') showWidget: boolean = false;
   private iconList = {
-    getup: $r('app.media.ic_task_morning'),
-    drink: $r('app.media.ic_task_water'),
-    apple: $r('app.media.ic_task_apple'),
+    brushTeeth: $r('app.media.ic_task_brush'),
     smile: $r('app.media.ic_task_smile'),
-    clean: $r('app.media.ic_task_brush'),
-    sleep: $r('app.media.ic_task_night')
+    drinkWater: $r('app.media.ic_task_water'),
+    step: $r('app.media.ic_task_water'),
+    exercise: $r('app.media.ic_task_morning'),
+    sleepEarly: $r('app.media.ic_task_night'),
+    sleepEnsure: $r('app.media.ic_task_night'),
+    sitRemind: $r('app.media.ic_task_morning'),
+    stretch: $r('app.media.ic_task_smile'),
+    diet: $r('app.media.ic_task_apple'),
+    mood: $r('app.media.ic_task_smile'),
+    weight: $r('app.media.ic_task_water'),
+    run: $r('app.media.ic_task_morning')
   } as iconInfo;
   /*
    * The action type.
@@ -116,23 +123,44 @@ struct AgencyCard {
   getIconByCardTaskType(key?: string): Resource {
     let result: Resource = $r('app.string.empty');
     switch (key) {
-      case 'getup':
-        result = $r('app.media.ic_task_morning');
-        break;
-      case 'drink':
-        result = $r('app.media.ic_task_water');
-        break;
-      case 'apple':
-        result = $r('app.media.ic_task_apple');
+      case 'brushTeeth':
+        result = $r('app.media.ic_task_brush');
         break;
       case 'smile':
         result = $r('app.media.ic_task_smile');
         break;
-      case 'clean':
-        result = $r('app.media.ic_task_brush');
+      case 'drinkWater':
+        result = $r('app.media.ic_task_water');
         break;
-      case 'sleep':
+      case 'step':
+        result = $r('app.media.ic_task_water');
+        break;
+      case 'exercise':
+        result = $r('app.media.ic_task_morning');
+        break;
+      case 'sleepEarly':
         result = $r('app.media.ic_task_night');
+        break;
+      case 'sleepEnsure':
+        result = $r('app.media.ic_task_night');
+        break;
+      case 'sitRemind':
+        result = $r('app.media.ic_task_morning');
+        break;
+      case 'stretch':
+        result = $r('app.media.ic_task_smile');
+        break;
+      case 'diet':
+        result = $r('app.media.ic_task_apple');
+        break;
+      case 'mood':
+        result = $r('app.media.ic_task_smile');
+        break;
+      case 'weight':
+        result = $r('app.media.ic_task_water');
+        break;
+      case 'run':
+        result = $r('app.media.ic_task_morning');
         break;
       default:
         break;
@@ -259,10 +287,17 @@ class AgencyCardInfo {
 }
 
 interface iconInfo {
-  getup: Resource;
-  drink: Resource;
-  apple: Resource;
+  brushTeeth: Resource;
   smile: Resource;
-  clean: Resource;
-  sleep: Resource;
+  drinkWater: Resource;
+  step: Resource;
+  exercise: Resource;
+  sleepEarly: Resource;
+  sleepEnsure: Resource;
+  sitRemind: Resource;
+  stretch: Resource;
+  diet: Resource;
+  mood: Resource;
+  weight: Resource;
+  run: Resource;
 }

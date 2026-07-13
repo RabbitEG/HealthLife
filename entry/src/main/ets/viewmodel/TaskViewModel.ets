@@ -18,7 +18,7 @@ import Logger from '../common/utils/Logger';
 import reminder from '../service/ReminderAgent';
 import TaskInfoApi from '../common/database/tables/TaskInfoApi';
 import { padTo2Digits } from '../common/utils/Utils';
-import TaskInfo, { oneWeek } from './TaskInfo';
+import TaskInfo, { oneWeek, TaskStatus } from './TaskInfo';
 import { TaskMapById, RemindContentMap, ITaskItem } from '../model/TaskInitList';
 import PublishReminderInfo from './PublishReminderInfo';
 
@@ -93,7 +93,7 @@ const isHasNotificationId = (notificationId: number) => {
 /**
  * @param params:TaskInfo
  */
-export const addTask = (params: TaskInfo, context: Context) => {
+export const addTask = (params: TaskInfo, context: Context, targetDate?: string) => {
   if (!params) {
     Logger.error('addTask', 'params is null!');
     return new Promise<number>((resolve) => {
@@ -119,23 +119,46 @@ export const addTask = (params: TaskInfo, context: Context) => {
         }
       });
     }
-    TaskInfoApi.updateDataByDate(params, (flag: number) => {
-      if (!flag) {
-        Logger.error('insertTaskSetting', 'updateTaskSetting Error!');
-        reject(flag);
-      }
-      resolve(flag);
-    });
-    let taskInfoStr = JSON.stringify(params);
-    let taskInfo: TaskInfo = JSON.parse(taskInfoStr);
-    taskInfo.date = new Date().toDateString();
-    taskInfo.isDone = true;
-    TaskInfoApi.updateDataByDate(taskInfo, (flag: number) => {
-      if (!flag) {
-        Logger.error('insertTaskSetting', 'updateTaskSetting Error!');
-        reject(flag);
-      }
-      resolve(flag);
+    const taskDate = targetDate || new Date().toDateString();
+    TaskInfoApi.query(taskDate, false, (dateTasks: TaskInfo[]) => {
+      const currentTask = dateTasks.find((item: TaskInfo) => item.taskID === params.taskID);
+      TaskInfoApi.updateDataByDate(params, (globalFlag: number) => {
+        if (!globalFlag) {
+          Logger.error('insertTaskSetting', 'update global task setting failed!');
+          reject(globalFlag);
+          return;
+        }
+        let taskInfoStr = JSON.stringify(params);
+        let taskInfo: TaskInfo = JSON.parse(taskInfoStr);
+        taskInfo.date = taskDate;
+        // Editing an active task must not erase the selected day's progress. A task that is
+        // enabled for the first time (or re-enabled) always starts unfinished.
+        if (params.isOpen && currentTask?.isOpen) {
+          taskInfo.isDone = currentTask.isDone;
+          taskInfo.finValue = currentTask.finValue;
+          taskInfo.status = currentTask.status;
+        } else {
+          taskInfo.isDone = false;
+          taskInfo.finValue = '';
+          taskInfo.status = TaskStatus.NOT_STARTED;
+        }
+        TaskInfoApi.updateDataByDate(taskInfo, (dateFlag: number) => {
+          if (dateFlag) {
+            resolve(dateFlag);
+            return;
+          }
+          // Older dates normally already contain task rows. Keep an insert fallback
+          // so adding to an uninitialized date still writes to the selected date.
+          TaskInfoApi.insertData(taskInfo, (insertFlag: number) => {
+            if (!insertFlag) {
+              Logger.error('insertTaskSetting', `save task for ${taskDate} failed!`);
+              reject(insertFlag);
+              return;
+            }
+            resolve(insertFlag);
+          });
+        });
+      });
     });
   });
 }
@@ -155,6 +178,14 @@ export const taskIndexDataInit = (taskInitList: ITaskItem[], taskInfoData: TaskI
         content.startTime = item?.startTime;
         content.endTime = item?.endTime;
         content.frequency = item?.frequency;
+        content.taskName = item?.taskName;
+        content.taskType = item?.taskType;
+        content.unit = item?.unit;
+        content.status = item?.status;
+        content.subTasks = item?.subTasks;
+        content.cycleDays = item?.cycleDays;
+        content.cycleTarget = item?.cycleTarget;
+        content.dataSrc = item?.dataSrc;
       }
     });
     return content;
@@ -211,13 +242,13 @@ export const formatTime = (value: TimePickerResult) => {
 }
 
 /**
- * @description Range of generated drinking water 0.25 - 5 L
+ * @description Range of generated drinking water 250 - 5000 mL
  * @return Array<string>
  */
 export const createDrinkRange = () => {
   const drinkRangeArr: Array<string> = []
-  for (let i = Const.DRINK_STEP; i <= Const.DRINK_MAX_RANGE; i += Const.DRINK_STEP) {
-    drinkRangeArr.push(`${i / Const.TIMES_100} L`);
+  for (let i = 250; i <= 5000; i += 250) {
+    drinkRangeArr.push(`${i} mL`);
   }
   return drinkRangeArr;
 }

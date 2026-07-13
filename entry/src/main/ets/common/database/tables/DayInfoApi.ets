@@ -108,6 +108,28 @@ class DayInfoApi {
       }
     });
   }
+
+  /**
+   * Query all daily summaries for historical achievement reconciliation.
+   */
+  queryAll(callback: Function): void {
+    RdbUtils.queryAll(Const.DAY_INFO.tableName as string).then(resultSet => {
+      let count = resultSet.rowCount;
+      let result: DayInfo[] = [];
+      if (count > 0 && typeof count !== 'string') {
+        resultSet.goToFirstRow();
+        for (let i = 0; i < count; i++) {
+          let dayInfo = new DayInfo('', 0, 0);
+          dayInfo.date = resultSet.getString(resultSet.getColumnIndex('date'));
+          dayInfo.targetTaskNum = resultSet.getDouble(resultSet.getColumnIndex('targetTaskNum'));
+          dayInfo.finTaskNum = resultSet.getDouble(resultSet.getColumnIndex('finTaskNum'));
+          result.push(dayInfo);
+          resultSet.goToNextRow();
+        }
+      }
+      callback(result);
+    });
+  }
 }
 
 function generateBucket(dayInfo: DayInfo): dataRdb.ValuesBucket {

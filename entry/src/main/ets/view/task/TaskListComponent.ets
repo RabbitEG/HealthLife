@@ -22,6 +22,11 @@ import { ITaskItem } from '../../model/TaskInitList';
 export default struct TaskList {
   @Consume taskList: ITaskItem[];
 
+  getTargetDate(): string {
+    const routeParams = (router.getParams() || {}) as Record<string, Object>;
+    return routeParams.targetDate ? routeParams.targetDate as string : new Date().toDateString();
+  }
+
   build() {
     List({ space: Const.LIST_ITEM_SPACE }) {
       ForEach(this.taskList, (item: ITaskItem) => {
@@ -56,10 +61,12 @@ export default struct TaskList {
         .height(Const.THOUSANDTH_80)
         .borderRadius(Const.DEFAULT_12)
         .onClick(() => {
+          const taskParams = JSON.parse(formatParams(item)) as ITaskItem;
+          taskParams.date = this.getTargetDate();
           router.pushUrl({
             url: 'pages/TaskEditPage',
             params: {
-              params: formatParams(item)
+              params: formatParams(taskParams)
             }
           })
         })

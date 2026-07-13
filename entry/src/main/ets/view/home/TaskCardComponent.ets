@@ -34,7 +34,7 @@ import TaskInfo from '../../viewmodel/TaskInfo';
 export struct TaskCard {
   @Prop taskInfoStr: string = '';
   clickAction: Function = (isClick: boolean) => {};
-  @State taskInfo: TaskInfo = new TaskInfo(-1, '', -1, '', false, '', '', '', false, '', false);
+  @State taskInfo: TaskInfo = TaskInfo.create(-1, '');
 
   aboutToAppear() {
     this.taskInfo = JSON.parse(this.taskInfoStr);
@@ -46,7 +46,7 @@ export struct TaskCard {
     } else {
       Row() {
         HealthText({
-          title: this.taskInfo.finValue || `--`,
+          title: this.taskInfo.finValue && Number(this.taskInfo.finValue) > 0 ? this.taskInfo.finValue : '--',
           fontSize: $r('app.float.default_24')
         })
         Text(` / ${this.taskInfo.targetValue} ${TaskMapById[this.taskInfo.taskID - 1].unit}`)
@@ -62,11 +62,12 @@ export struct TaskCard {
         Image(TaskMapById[this.taskInfo.taskID - 1].icon)
           .width($r('app.float.default_36')).height($r('app.float.default_36'))
           .objectFit(ImageFit.Contain)
-        HealthText({
-          title: '',
-          titleResource: TaskMapById[this.taskInfo.taskID - 1].taskName,
-          fontFamily: $r('app.string.HarmonyHeiTi')
-        })
+        Column() {
+          HealthText({
+            title: this.taskInfo.taskName || TaskMapById[this.taskInfo.taskID - 1].taskName,
+            fontFamily: $r('app.string.HarmonyHeiTi')
+          })
+        }.alignItems(HorizontalAlign.Start)
       }
 
       this.targetValueBuilder();
