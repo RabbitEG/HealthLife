@@ -249,7 +249,8 @@ struct AIDiagnosisPage {
             ListItem() {
               this.MessageRow(message)
             }
-          }, (message: ChatMessage) => `${message.id}`)
+          }, (message: ChatMessage) =>
+            `${message.id}-${message.isLoading ? 'loading' : (message.isError ? 'error' : 'ready')}`)
         }
         .layoutWeight(1)
         .width('100%')
