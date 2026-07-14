@@ -213,6 +213,12 @@ export default struct HomeIndex {
     });
   }
 
+  openAIDiagnosis(): void {
+    router.pushUrl({ url: 'pages/AIDiagnosisPage' }).catch((error: Error) => {
+      Logger.error('HomeIndex', `open AI diagnosis failed: ${JSON.stringify(error)}`);
+    });
+  }
+
   build() {
     Stack() {
       Scroll(this.scroller) {
@@ -277,14 +283,28 @@ export default struct HomeIndex {
       .onClick(() => this.openMoodPicker())
       Row() {
         Text($r('app.string.EntryAbility_label'))
-          .titleTextStyle()
           .fontSize($r('app.float.default_24'))
+          .fontWeight(Const.FONT_WEIGHT_500)
+          .fontFamily($r('app.string.HarmonyHeiTi_Medium'))
+          .fontColor($r(`app.element.color.titleColor`))
           .padding({ left: Const.THOUSANDTH_66 })
+        Blank()
+        Button($r('app.string.ai_diagnosis'))
+          .height(32)
+          .fontSize(14)
+          .fontWeight(Const.FONT_WEIGHT_500)
+          .fontColor(Color.White)
+          .backgroundColor('#007DFF')
+          .borderRadius(18)
+          .padding({ left: 14, right: 14 })
+          .margin({ right: Const.THOUSANDTH_33 })
+          .onClick(() => this.openAIDiagnosis())
       }
       .width(Const.THOUSANDTH_1000)
       .height(Const.DEFAULT_56)
       .position({ x: 0, y: 0 })
       .backgroundColor(`rgba(${WHITE_COLOR_0X},${WHITE_COLOR_0X},${WHITE_COLOR_0X},${this.naviAlpha})`)
+      .zIndex(Const.HOME_BTN_Z)
 
       CustomDialogView()
       if (this.showMoodPicker) {

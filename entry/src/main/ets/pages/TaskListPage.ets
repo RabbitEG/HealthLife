@@ -68,6 +68,14 @@ struct TaskIndex {
       .size({ width: Const.THOUSANDTH_1000, height: Const.THOUSANDTH_1000 })
       .title(Const.ADD_TASK_TITLE)
       .titleMode(NavigationTitleMode.Mini)
+      .menus([
+        {
+          value: $r('app.string.ai_diagnosis'),
+          action: () => {
+            router.pushUrl({ url: 'pages/AIDiagnosisPage' });
+          }
+        }
+      ])
     }
     .backgroundColor($r('app.color.primaryBgColor'))
     .height(Const.THOUSANDTH_1000)

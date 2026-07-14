@@ -7,7 +7,7 @@ const PAGE_PADDING: number = 20;
 const CARD_RADIUS: number = 18;
 const CARD_GAP: number = 12;
 const ITEM_HEIGHT: number = 56;
-const APP_VERSION: string = '0.6.0';
+const APP_VERSION: string = '0.10.0';
 const GITHUB_URL: string = 'https://github.com/RabbitEG/HealthLife';
 const PROJECT_URL: string = 'https://gitee.com/gudehe/healthy_-life';
 

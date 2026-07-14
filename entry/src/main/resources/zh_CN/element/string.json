@@ -555,6 +555,46 @@
     {
       "name": "about_app_desc",
       "value": "培养健康生活习惯的任务管理App"
+    },
+    {
+      "name": "ai_diagnosis",
+      "value": "AI诊断"
+    },
+    {
+      "name": "ai_chat_title",
+      "value": "AI健康咨询"
+    },
+    {
+      "name": "ai_disclaimer",
+      "value": "AI内容仅供健康生活参考，不构成医疗诊断或治疗建议。"
+    },
+    {
+      "name": "ai_empty_title",
+      "value": "想了解什么健康问题？"
+    },
+    {
+      "name": "ai_empty_desc",
+      "value": "描述你的生活习惯或困扰，AI会结合上下文持续回答追问。"
+    },
+    {
+      "name": "ai_input_hint",
+      "value": "输入你的问题…"
+    },
+    {
+      "name": "ai_send",
+      "value": "发送"
+    },
+    {
+      "name": "ai_generating",
+      "value": "AI回复生成中…"
+    },
+    {
+      "name": "ai_user",
+      "value": "我"
+    },
+    {
+      "name": "ai_assistant",
+      "value": "HealthLife AI"
     }
   ]
 }

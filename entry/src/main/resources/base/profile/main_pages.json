@@ -4,6 +4,7 @@
     "pages/AdvertisingPage",
     "pages/MainPage",
     "pages/TaskListPage",
+    "pages/AIDiagnosisPage",
     "pages/TaskEditPage",
     "pages/AboutPage"
   ]

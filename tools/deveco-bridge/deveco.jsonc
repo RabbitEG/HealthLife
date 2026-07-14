@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "deveco/GLM-5.1",
+  "agent": {
+    "healthlife": {
+      "description": "HealthLife 中只提供健康生活建议的对话助手",
+      "mode": "primary",
+      "model": "deveco/GLM-5.1",
+      "prompt": "{file:./healthlife-system-prompt.txt}",
+      "steps": 1,
+      "permission": {
+        "*": "deny"
+      },
+      "tools": {
+        "*": false
+      }
+    }
+  }
+}

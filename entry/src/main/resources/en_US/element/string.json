@@ -555,6 +555,46 @@
     {
       "name": "about_app_desc",
       "value": "A task management app for building healthy lifestyle habits"
+    },
+    {
+      "name": "ai_diagnosis",
+      "value": "AI Check"
+    },
+    {
+      "name": "ai_chat_title",
+      "value": "AI Health Chat"
+    },
+    {
+      "name": "ai_disclaimer",
+      "value": "AI content is for healthy-lifestyle reference only and is not a medical diagnosis or treatment plan."
+    },
+    {
+      "name": "ai_empty_title",
+      "value": "What would you like to ask?"
+    },
+    {
+      "name": "ai_empty_desc",
+      "value": "Describe a habit or concern. The AI will remember this conversation for follow-up questions."
+    },
+    {
+      "name": "ai_input_hint",
+      "value": "Enter your question…"
+    },
+    {
+      "name": "ai_send",
+      "value": "Send"
+    },
+    {
+      "name": "ai_generating",
+      "value": "Generating reply…"
+    },
+    {
+      "name": "ai_user",
+      "value": "Me"
+    },
+    {
+      "name": "ai_assistant",
+      "value": "HealthLife AI"
     }
   ]
 }
