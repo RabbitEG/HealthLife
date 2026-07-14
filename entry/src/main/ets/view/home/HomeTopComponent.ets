@@ -54,6 +54,8 @@ export default struct HomeTopView {
 
       WeekCalendar({
         homeStore: this.homeStore,
+        navigationTarget: this.homeStore.calendarScrollTarget,
+        navigationRequest: this.homeStore.calendarScrollRequest,
         openMonthAction: (): void => {
           this.openMonthAction();
         }

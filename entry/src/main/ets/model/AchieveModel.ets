@@ -25,13 +25,11 @@ export function getAchievementLevel() {
 
     let achievementStr = globalInfo.achievements??'';
     let achievements = achievementStr.split(',').filter((level: string) => level.length > 0);
-    if (achievements.length > 0) {
-      let highestLevel = 0;
-      achievements.forEach((level: string) => {
-        highestLevel = Math.max(highestLevel, Number(level));
-      });
-      AppStorage.Set<Number>(ACHIEVEMENT_LEVEL_KEY, highestLevel);
-    }
+    let highestLevel = 0;
+    achievements.forEach((level: string) => {
+      highestLevel = Math.max(highestLevel, Number(level));
+    });
+    AppStorage.SetOrCreate<number>(ACHIEVEMENT_LEVEL_KEY, highestLevel);
   })
 
 }

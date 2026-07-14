@@ -167,7 +167,7 @@ struct AboutPage {
           })
 
           Row() {
-            Text('© 2026 Chen Zhiyi. All rights reserved.')
+            Text('© 2026 RabbitEG. All rights reserved.')
               .fontSize(12)
               .fontColor('#B0B4BA')
           }

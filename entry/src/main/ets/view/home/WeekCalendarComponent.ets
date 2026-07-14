@@ -16,6 +16,8 @@ const WEEK_LABELS: string[] = ['一', '二', '三', '四', '五', '六', '日'];
 @Component
 export struct WeekCalendar {
   @ObjectLink homeStore: HomeStore;
+  @Prop navigationTarget: number = 0;
+  @Prop @Watch('syncCalendarNavigation') navigationRequest: number = 0;
   openMonthAction: Function = () => {};
   currentPage: number = 0;
   private scroller: Scroller = new Scroller();
@@ -71,6 +73,13 @@ export struct WeekCalendar {
     this.scroller.scrollTo({ xOffset: page * this.scrollWidth, yOffset: 0 } as ScrollTo);
   }
 
+  syncCalendarNavigation(): void {
+    // Wait until ArkUI has rebuilt the strip after its week data changes.
+    setTimeout((): void => {
+      this.scrollToDate(this.navigationTarget);
+    }, 0);
+  }
+
   gotoPreviousWeek() {
     this.isPageScroll = true;
     let date: Date = new Date(this.homeStore.showDate);
@@ -97,21 +106,41 @@ export struct WeekCalendar {
     // The current week already contains dates later than today. Whether the
     // right arrow is available is therefore determined by loaded calendar
     // data, not by comparing the selected weekday with the current instant.
-    if (this.getDateIndex(targetTime) < 0) {
+    if (this.getDateIndex(targetTime) < 0 && this.isAfterCurrentWeek(targetTime)) {
       return;
     }
     this.isPageScroll = true;
-    this.homeStore.setSelectedShowDate(targetTime);
-    this.scrollToDate(targetTime);
-    this.isPageScroll = false;
+    if (this.getDateIndex(targetTime) < 0) {
+      this.homeStore.getNextWeekData(new Date(this.homeStore.showDate), () => {
+        this.homeStore.setSelectedShowDate(targetTime);
+        this.scrollToDate(targetTime);
+        this.isPageScroll = false;
+      });
+    } else {
+      this.homeStore.setSelectedShowDate(targetTime);
+      this.scrollToDate(targetTime);
+      this.isPageScroll = false;
+    }
+  }
+
+  isAfterCurrentWeek(dateTime: number): boolean {
+    const targetDate = new Date(dateTime);
+    const today = new Date();
+    const targetDay = (targetDate.getDay() + WEEK_DAY_NUM - 1) % WEEK_DAY_NUM;
+    const todayDay = (today.getDay() + WEEK_DAY_NUM - 1) % WEEK_DAY_NUM;
+    targetDate.setDate(targetDate.getDate() - targetDay);
+    today.setDate(today.getDate() - todayDay);
+    targetDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return targetDate.getTime() > today.getTime();
   }
 
   goBackToToday() {
-    let today = new Date();
-    this.homeStore.setSelectedShowDate(today.getTime());
-    this.homeStore.initData();
-    this.currentPage = 0;
-    this.scroller.scrollTo({ xOffset: 0, yOffset: 0 } as ScrollTo);
+    const today = new Date();
+    // Use the same navigation path as a date picked from the month calendar.
+    // It loads today's week first when necessary and only then asks the week
+    // strip to scroll, avoiding a scroll against stale children.
+    this.homeStore.selectCalendarDate(today.getTime(), (): void => {});
   }
 
   onWeekLabelClick(dayIndex: number) {
@@ -262,7 +291,6 @@ export struct WeekCalendar {
       if ((this.currentPage + 2) * Const.WEEK_DAY_NUM >= this.homeStore.dateArr.length) {
         Logger.info('HomeIndex', 'onScrollEdge: load more data');
         let date: Date = new Date(this.homeStore.showDate);
-        date.setDate(date.getDate() - Const.WEEK_DAY_NUM);
         this.homeStore.getPreWeekData(date, () => {});
         this.isLoadMore = true;
       }

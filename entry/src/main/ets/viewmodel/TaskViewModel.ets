@@ -18,7 +18,7 @@ import Logger from '../common/utils/Logger';
 import reminder from '../service/ReminderAgent';
 import TaskInfoApi from '../common/database/tables/TaskInfoApi';
 import { dateToStr, padTo2Digits } from '../common/utils/Utils';
-import TaskInfo, { oneWeek, TaskStatus, TaskTypeEnum, SubTaskInfo } from './TaskInfo';
+import TaskInfo, { oneWeek, TaskStatus } from './TaskInfo';
 import { TaskMapById, RemindContentMap, ITaskItem } from '../model/TaskInitList';
 import PublishReminderInfo from './PublishReminderInfo';
 
@@ -89,21 +89,6 @@ function copyTaskProgress(target: TaskInfo, source: TaskInfo): void {
   target.status = source.status;
   target.subTasks = source.subTasks;
   target.inputHistory = source.inputHistory;
-}
-
-function markInitialTaskCompleted(taskInfo: TaskInfo): void {
-  taskInfo.isDone = true;
-  taskInfo.status = TaskStatus.COMPLETED;
-  taskInfo.finValue = taskInfo.targetValue;
-  if (taskInfo.taskType === TaskTypeEnum.SUB_TASK && taskInfo.subTasks) {
-    try {
-      const subTasks = JSON.parse(taskInfo.subTasks) as Array<SubTaskInfo>;
-      subTasks.forEach((subTask) => subTask.isDone = true);
-      taskInfo.subTasks = JSON.stringify(subTasks);
-    } catch (error) {
-      Logger.warn('addTask', `invalid subTasks: ${JSON.stringify(error)}`);
-    }
-  }
 }
 
 /**
@@ -205,14 +190,9 @@ export const addTask = (params: TaskInfo, context: Context, targetDate?: string)
       taskInfo.status = TaskStatus.NOT_STARTED;
       taskInfo.inputHistory = '';
       // Editing an active record keeps that day's independent progress. New
-      // records (including future occurrences) always start unfinished.
+      // records, including the first occurrence, always start at zero.
       if (preserveProgress && params.isOpen && currentTask?.isOpen) {
         copyTaskProgress(taskInfo, currentTask);
-      } else if (!pastDate && date === taskDate && params.isOpen && !currentTask?.isOpen) {
-        // The first activation is recorded as completed for the selected
-        // day. Future recurring occurrences still start unfinished because
-        // only the selected date enters this branch.
-        markInitialTaskCompleted(taskInfo);
       }
       return saveTaskRecord(taskInfo);
     };

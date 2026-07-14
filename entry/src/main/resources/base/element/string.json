@@ -558,6 +558,10 @@
     },
     {
       "name": "past_edit_disabled",
+      "value": "不允许修改过去的心情"
+    },
+    {
+      "name": "past_task_edit_disabled",
       "value": "不允许修改过去的任务"
     },
     {
@@ -578,7 +582,7 @@
     },
     {
       "name": "about_author_name",
-      "value": "Chen Zhiyi"
+      "value": "RabbitEG"
     },
     {
       "name": "about_project",

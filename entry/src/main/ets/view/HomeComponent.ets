@@ -74,7 +74,17 @@ export default struct HomeIndex {
   @StorageProp(Const.ALLOW_EDIT_PAST_KEY) allowEditPast: boolean = Const.ALLOW_EDIT_PAST_DEFAULT;
 
   taskChange() {
-    this.homeStore.updateTaskInfoList(this.editedTaskInfo);
+    this.homeStore.updateTaskInfoList(this.editedTaskInfo).then((achievementInfo: AchievementInfo) => {
+      this.showAchievement(achievementInfo);
+    }).catch((error: Error) => {
+      Logger.error('HomeIndex', `update task info failed: ${JSON.stringify(error)}`);
+    });
+  }
+
+  showAchievement(achievementInfo: AchievementInfo): void {
+    if (achievementInfo.showAchievement && achievementInfo.achievementLevel) {
+      this.broadCast.emit(BroadCastType.SHOW_ACHIEVEMENT_DIALOG, achievementInfo.achievementLevel);
+    }
   }
 
   isPastDate(): boolean {
@@ -174,15 +184,10 @@ export default struct HomeIndex {
   //confirm clockL
   onConfirm(task: TaskInfo, action: string = 'clock', inputVal: string = '') {
     this.homeStore.taskClock(task, action, inputVal).then((res: AchievementInfo) => {
-      if (res.showAchievement) {
-        let achievementLevel = res.achievementLevel;
-        if (achievementLevel) {
-          this.broadCast.emit(BroadCastType.SHOW_ACHIEVEMENT_DIALOG, achievementLevel);
-        } else {
-          this.broadCast.emit(BroadCastType.SHOW_ACHIEVEMENT_DIALOG);
-        }
-      }
-    })
+      this.showAchievement(res);
+    }).catch((error: Error) => {
+      Logger.error('HomeIndex', `clock task failed: ${JSON.stringify(error)}`);
+    });
   }
 
   // change navigator alpha when scrolling the Scroll component
@@ -197,7 +202,7 @@ export default struct HomeIndex {
 
   editTaskAction(): void {
     if (this.isPastDate() && !this.allowEditPast) {
-      promptAction.showToast({ message: $r('app.string.past_edit_disabled') });
+      promptAction.showToast({ message: $r('app.string.past_task_edit_disabled') });
       return;
     }
     router.pushUrl({

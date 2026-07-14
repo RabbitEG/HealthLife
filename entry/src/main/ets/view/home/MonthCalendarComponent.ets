@@ -1,6 +1,6 @@
 import DayInfoApi from '../../common/database/tables/DayInfoApi';
 import DayInfo from '../../viewmodel/DayInfo';
-import { dateToStr, sameMonth } from '../../common/utils/Utils';
+import { dateToStr } from '../../common/utils/Utils';
 import { HomeStore } from '../../viewmodel/HomeViewModel';
 import { CommonConstants as Const } from '../../common/constants/CommonConstants';
 import DatabaseApi from '../../model/DatabaseModel';
@@ -11,8 +11,13 @@ interface MonthDayItem {
   day: number;
   timestamp: number;
   dateStr: string;
-  inCurrentMonth: boolean;
+  isPlaceholder: boolean;
   progress: number;
+}
+
+interface CalendarRow {
+  renderKey: string;
+  items: MonthDayItem[];
 }
 
 @Component
@@ -20,7 +25,7 @@ export struct MonthCalendarView {
   @ObjectLink homeStore: HomeStore;
   closeAction: Function = () => {};
   @State monthAnchor: number = new Date().getTime();
-  @State monthDays: MonthDayItem[] = [];
+  @State calendarRows: CalendarRow[] = [];
   private monthLoadId: number = 0;
 
   aboutToAppear() {
@@ -33,41 +38,71 @@ export struct MonthCalendarView {
     return `${date.getFullYear()}年${date.getMonth() + 1}月`;
   }
 
+  buildCalendarRows(items: MonthDayItem[], totalRows: number): CalendarRow[] {
+    const rows: CalendarRow[] = [];
+    for (let r = 0; r < totalRows; r++) {
+      const rowItems: MonthDayItem[] = [];
+      for (let c = 0; c < 7; c++) {
+        const idx = r * 7 + c;
+        if (idx < items.length) {
+          rowItems.push(items[idx]);
+        }
+      }
+      // ArkUI reuses a ForEach branch while its key remains unchanged.  A row
+      // number (0, 1, 2...) is identical in every month, which left the old
+      // date cells on screen after switching months.  Include both the actual
+      // dates and their progress in the key so month and async data changes
+      // always rebuild the affected row.
+      const renderKey = rowItems
+        .map((item: MonthDayItem) => `${item.dateStr}:${item.progress}`)
+        .join('|');
+      rows.push({ renderKey: renderKey, items: rowItems } as CalendarRow);
+    }
+    return rows;
+  }
+
   loadMonth() {
     const anchor = new Date(this.monthAnchor);
     const loadId = ++this.monthLoadId;
-    const firstDay = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-    const mondayOffset = (firstDay.getDay() + 6) % 7;
-    const gridStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1 - mondayOffset);
-    const lastDayOfMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
-    const lastMondayOffset = (lastDayOfMonth.getDay() + 6) % 7;
-    const totalRows = Math.ceil((mondayOffset + lastDayOfMonth.getDate()) / 7);
+    const year = anchor.getFullYear();
+    const month = anchor.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDow = (firstDay.getDay() + 6) % 7;
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    const totalRows = Math.ceil((startDow + lastDate) / 7);
     const totalCells = totalRows * 7;
     const dates: string[] = [];
     const items: MonthDayItem[] = [];
     for (let index = 0; index < totalCells; index++) {
-      const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
+      const day = index - startDow + 1;
+      if (day < 1 || day > lastDate) {
+        items.push({
+          day: 0,
+          timestamp: 0,
+          dateStr: `blank-${year}-${month}-${index}`,
+          isPlaceholder: true,
+          progress: 0
+        } as MonthDayItem);
+        continue;
+      }
+      const date = new Date(year, month, day);
       const dateStr = dateToStr(date);
       dates.push(dateStr);
       items.push({
-        day: date.getDate(),
+        day: day,
         timestamp: date.getTime(),
         dateStr: dateStr,
-        inCurrentMonth: sameMonth(date, anchor),
+        isPlaceholder: false,
         progress: 0
       } as MonthDayItem);
     }
+    this.calendarRows = this.buildCalendarRows(items, totalRows);
     DayInfoApi.queryList(dates, (records: DayInfo[]) => {
       if (loadId !== this.monthLoadId) {
         return;
       }
-      // Most dates already have a dayInfo summary.  The leading/trailing
-      // cells of a month grid can be outside the viewed month, however, and
-      // those dates may not have been visited by the week view yet.  Lazily
-      // materialize the plan and calculate the missing summary from the
-      // date-specific task rows so their badges are consistent as well.
       const missingItems = items.filter((item: MonthDayItem) => {
-        return !records.some((value: DayInfo) => value.date === item.dateStr);
+        return !item.isPlaceholder && !records.some((value: DayInfo) => value.date === item.dateStr);
       });
       const queryTasks = (date: string): Promise<TaskInfo[]> => {
         return new Promise((resolve: (tasks: TaskInfo[]) => void) => {
@@ -76,10 +111,7 @@ export struct MonthCalendarView {
       };
       const missingProgress = missingItems.map((item: MonthDayItem) => {
         return DatabaseApi.ensureTasksForDate(item.dateStr)
-          .catch(() => {
-            // A missing plan must still be rendered as an empty day when the
-            // database is temporarily unavailable.
-          })
+          .catch(() => {})
           .then(() => queryTasks(item.dateStr))
           .then((tasks: TaskInfo[]) => {
             const openTasks = tasks.filter((task: TaskInfo) => task.isOpen);
@@ -88,7 +120,6 @@ export struct MonthCalendarView {
             item.progress = dayInfo.targetTaskNum > 0
               ? Math.min(100, Math.round(dayInfo.finTaskNum / dayInfo.targetTaskNum * 100))
               : 0;
-            // Keep the summary table in sync for later month/week renders.
             return new Promise<void>((resolve: () => void) => {
               DayInfoApi.updateData(dayInfo, (updated: number) => {
                 if (updated) {
@@ -113,7 +144,7 @@ export struct MonthCalendarView {
             item.progress = Math.min(100, Math.round(record.finTaskNum / record.targetTaskNum * 100));
           }
         });
-        this.monthDays = items.slice();
+        this.calendarRows = this.buildCalendarRows(items, totalRows);
       });
     });
   }
@@ -126,11 +157,9 @@ export struct MonthCalendarView {
 
   getCurrentProgress(item: MonthDayItem): number {
     const liveDate = this.homeStore.dateArr.find((dateItem) => dateItem.dateStr === item.dateStr);
-    if (liveDate) {
-      if (liveDate.dayInfo && liveDate.dayInfo.targetTaskNum > 0) {
-        return Math.min(100,
-          Math.round(liveDate.dayInfo.finTaskNum / liveDate.dayInfo.targetTaskNum * 100));
-      }
+    if (liveDate?.dayInfo && liveDate.dayInfo.targetTaskNum > 0) {
+      return Math.min(100,
+        Math.round(liveDate.dayInfo.finTaskNum / liveDate.dayInfo.targetTaskNum * 100));
     }
     return item.progress;
   }
@@ -144,6 +173,29 @@ export struct MonthCalendarView {
       return $r('app.media.ic_home_all_done');
     }
     return $r('app.media.ic_home_half_done');
+  }
+
+  @Builder
+  dayCell(item: MonthDayItem) {
+    Column({ space: 4 }) {
+      Text(`${item.day}`)
+        .fontSize($r('app.float.default_14'))
+        .fontColor($r('app.color.titleColor'))
+      Image(this.getProgressImg(item))
+        .width($r('app.float.default_28'))
+        .height($r('app.float.default_28'))
+        .objectFit(ImageFit.Contain)
+    }
+    .width('14.28%')
+    .height($r('app.float.default_64'))
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => {
+      if (item.timestamp <= new Date().getTime()) {
+        this.homeStore.selectCalendarDate(item.timestamp, (): void => {
+          this.closeAction();
+        });
+      }
+    })
   }
 
   build() {
@@ -190,34 +242,23 @@ export struct MonthCalendarView {
         })
       }.margin({ top: $r('app.float.default_12'), bottom: $r('app.float.default_8') })
 
-      Grid() {
-        ForEach(this.monthDays, (item: MonthDayItem) => {
-          GridItem() {
-            Column({ space: 4 }) {
-              Text(`${item.day}`)
-                .fontSize($r('app.float.default_14'))
-                .fontColor(item.inCurrentMonth ? $r('app.color.titleColor') : $r('app.color.disabledColor'))
-              Image(this.getProgressImg(item))
-                .width($r('app.float.default_28'))
-                .height($r('app.float.default_28'))
-                .objectFit(ImageFit.Contain)
-            }
-            .width(Const.FULL_WIDTH)
-            .height($r('app.float.default_64'))
-            .justifyContent(FlexAlign.Center)
-            .onClick(() => {
-              if (item.timestamp <= new Date().getTime()) {
-                this.homeStore.setSelectedShowDate(item.timestamp);
-                this.closeAction();
+      Column() {
+        ForEach(this.calendarRows, (row: CalendarRow) => {
+          Row() {
+            ForEach(row.items, (item: MonthDayItem) => {
+              if (item.isPlaceholder) {
+                Blank()
+                  .width('14.28%')
+                  .height($r('app.float.default_64'))
+              } else {
+                this.dayCell(item)
               }
-            })
+            }, (item: MonthDayItem) => item.dateStr)
           }
-        }, (item: MonthDayItem) => item.dateStr)
+          .width(Const.FULL_WIDTH)
+        }, (row: CalendarRow) => row.renderKey)
       }
-      .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr')
-      .rowsGap($r('app.float.default_4'))
       .width(Const.FULL_WIDTH)
-      .layoutWeight(1)
       .padding({ left: $r('app.float.default_12'), right: $r('app.float.default_12') })
     }
     .width(Const.FULL_WIDTH)

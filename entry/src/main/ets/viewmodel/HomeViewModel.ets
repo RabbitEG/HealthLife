@@ -16,7 +16,7 @@
 import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import { ACHIEVEMENT_LEVEL_KEY } from '../model/AchieveModel';
 import { TaskMapById, ITaskItem, ACHIEVEMENT_LEVEL_LIST } from '../model/TaskInitList';
-import TaskInfo, { TaskStatus, TaskTypeEnum, SubTaskInfo } from './TaskInfo';
+import TaskInfo, { TaskStatus, TaskTypeEnum } from './TaskInfo';
 import DayInfo from './DayInfo';
 import { dateToStr, weekDateFormat } from '../common/utils/Utils';
 import { WeekDateModel, initializeOnStartUp, getPreviousWeek, WEEK_DAY_NUM } from '../model/WeekCalendarModel';
@@ -28,6 +28,8 @@ import Logger from '../common/utils/Logger';
 import GlobalInfo from './GlobalInfo';
 import WeekCalendarInfo from './WeekCalendarInfo';
 import AchievementInfo from './AchievementInfo';
+import { HealthDataSrcMgr } from '../common/utils/HealthDataSrcMgr';
+import { BroadCastType } from '../common/utils/BroadCast';
 
 @Observed
 export class HomeStore {
@@ -36,12 +38,15 @@ export class HomeStore {
   public selectedDay: number; // selected day of on week
   public showDate: number;
   public dateTitle: string;
+  public calendarScrollTarget: number;
+  public calendarScrollRequest: number = 0;
   public selectedDayInfo: WeekDateModel = new WeekDateModel('', '', new Date()); // task info on selected day
 
   constructor(currentDate: Date) {
     this.currentDate = currentDate;
     this.showDate = currentDate.getTime();
     this.dateTitle = weekDateFormat(currentDate.getTime());
+    this.calendarScrollTarget = this.showDate;
     this.selectedDay = (new Date().getDay() + WEEK_DAY_NUM - 1) % WEEK_DAY_NUM;
   }
 
@@ -98,6 +103,65 @@ export class HomeStore {
       this.dateArr = weekCalendarInfo.arr.concat(...this.dateArr);
       callback();
     })
+  }
+
+  public getNextWeekData(date: Date, callback: Function) {
+    const nextWeekDate = new Date(date);
+    nextWeekDate.setDate(nextWeekDate.getDate() + WEEK_DAY_NUM);
+    let weekCalendarInfo: WeekCalendarInfo = initializeOnStartUp(nextWeekDate);
+    DayInfoApi.queryList(weekCalendarInfo.strArr, (res: DayInfo[]) => {
+      for (let i = 0; i < weekCalendarInfo.arr.length; i++) {
+        let dayInfo = res.find((item: DayInfo) => item.date === weekCalendarInfo.arr[i].dateStr);
+        weekCalendarInfo.arr[i].dayInfo = dayInfo ||
+          new DayInfo(weekCalendarInfo.arr[i].dateStr, 0, 0);
+      }
+      this.dateArr = this.dateArr.concat(weekCalendarInfo.arr);
+      callback();
+    });
+  }
+
+  /**
+   * Select a date coming from a month calendar.
+   *
+   * The week strip normally contains only the current week plus weeks reached
+   * through horizontal navigation. A date picked directly from a month grid
+   * can therefore be outside that data source. Load the picked week first so
+   * every badge and click target in the strip represents the selected week.
+   */
+  public selectCalendarDate(showDateTime: number, callback: Function): void {
+    const selectedDate = new Date(showDateTime);
+    if (Number.isNaN(selectedDate.getTime())) {
+      callback();
+      return;
+    }
+    selectedDate.setHours(0, 0, 0, 0);
+    const normalizedTime = selectedDate.getTime();
+    const selectedDateStr = dateToStr(selectedDate);
+    const selectedInfo = this.dateArr.find((item: WeekDateModel) => item.dateStr === selectedDateStr);
+    if (selectedInfo) {
+      this.setSelectedShowDate(normalizedTime);
+      this.requestCalendarScroll();
+      callback();
+      return;
+    }
+
+    let weekCalendarInfo: WeekCalendarInfo = initializeOnStartUp(selectedDate);
+    DayInfoApi.queryList(weekCalendarInfo.strArr, (res: DayInfo[]) => {
+      for (let i = 0; i < weekCalendarInfo.arr.length; i++) {
+        let dayInfo = res.find((item: DayInfo) => item.date === weekCalendarInfo.arr[i].dateStr);
+        weekCalendarInfo.arr[i].dayInfo = dayInfo ||
+          new DayInfo(weekCalendarInfo.arr[i].dateStr, 0, 0);
+      }
+      this.dateArr = weekCalendarInfo.arr;
+      this.setSelectedShowDate(normalizedTime);
+      this.requestCalendarScroll();
+      callback();
+    });
+  }
+
+  public requestCalendarScroll(): void {
+    this.calendarScrollTarget = this.showDate;
+    this.calendarScrollRequest += 1;
   }
 
   // check is current day
@@ -174,7 +238,7 @@ export class HomeStore {
     Logger.info("selectedDayTaskInfo: ", JSON.stringify(selectedDayInfo.taskList));
   }
 
-  public updateTaskInfoList(editedTaskInfo: ITaskItem) {
+  public updateTaskInfoList(editedTaskInfo: ITaskItem): Promise<AchievementInfo> {
     if (editedTaskInfo?.taskID) {
       // edited task
       let taskID = editedTaskInfo.taskID;
@@ -205,11 +269,7 @@ export class HomeStore {
       task.inputHistory = '';
       task.planStartDate = editedTaskInfo.planStartDate || taskDate;
       task.isRecurring = editedTaskInfo.repeatEnabled === true;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const selectedTaskDate = new Date(taskDate);
-      selectedTaskDate.setHours(0, 0, 0, 0);
-      const isHistoricalTask = selectedTaskDate.getTime() < today.getTime();
+      let achievementUpdate: Promise<number> = Promise.resolve(0);
       this.dateArr = this.dateArr.map((item: WeekDateModel) => {
         if (task.date === item.dateStr) {
           Logger.info('item', JSON.stringify(item));
@@ -226,21 +286,6 @@ export class HomeStore {
               task.status = currentTask.status;
               task.subTasks = currentTask.subTasks;
               task.inputHistory = currentTask.inputHistory;
-            } else if (!isHistoricalTask) {
-              // The first activation is recorded as completed for the
-              // selected date, matching the persisted addTask record.
-              task.isDone = true;
-              task.finValue = task.targetValue;
-              task.status = TaskStatus.COMPLETED;
-              if (task.taskType === TaskTypeEnum.SUB_TASK && task.subTasks) {
-                try {
-                  const subTasks = JSON.parse(task.subTasks) as Array<SubTaskInfo>;
-                  subTasks.forEach((subTask) => subTask.isDone = true);
-                  task.subTasks = JSON.stringify(subTasks);
-                } catch (error) {
-                  Logger.warn('updateTaskInfoList', `invalid subTasks: ${JSON.stringify(error)}`);
-                }
-              }
             }
             taskList = taskList.filter((taskItem) => taskItem.taskID != taskID)
               .concat(task)
@@ -254,14 +299,14 @@ export class HomeStore {
           dayInfo.targetTaskNum = taskList.length;
           dayInfo.finTaskNum = this.getFinishedTaskCount(taskList);
           const isDayComplete = this.isTaskListComplete(taskList);
-          this.persistDayInfo(dayInfo).then(() => {
+          achievementUpdate = this.persistDayInfo(dayInfo).then(() => {
             if (wasDayComplete !== isDayComplete) {
-              this.updateAchievement().catch((error: Error) => {
-                Logger.error('updateTaskInfoList-achievement', JSON.stringify(error));
-              });
+              return this.updateAchievement();
             }
+            return 0;
           }).catch((error: Error) => {
             Logger.error('updateTaskInfoList-dayInfo', JSON.stringify(error));
+            return 0;
           });
           Logger.debug("tempDayInfo", JSON.stringify(dayInfo));
           let weekDateModelStr = JSON.stringify(item);
@@ -276,7 +321,17 @@ export class HomeStore {
         }
         return item;
       }).slice(0);
+      return achievementUpdate.then((achievementLevel: number) => {
+        return {
+          achievementLevel: achievementLevel,
+          showAchievement: ACHIEVEMENT_LEVEL_LIST.includes(achievementLevel)
+        } as AchievementInfo;
+      });
     }
+    return Promise.resolve({
+      achievementLevel: 0,
+      showAchievement: false
+    } as AchievementInfo);
   }
 
   public setSelectedShowDate(showDateTime: number) {
@@ -551,8 +606,6 @@ export class HomeStore {
   }
 
   calculateLongestConsecutiveCheckInDays(dayInfoList: DayInfo[]): number {
-    let today = new Date();
-    today.setHours(0, 0, 0, 0);
     let completedDates: Date[] = [];
     dayInfoList.forEach((dayInfo: DayInfo) => {
       if (!this.isDayInfoComplete(dayInfo)) {
@@ -563,9 +616,10 @@ export class HomeStore {
         return;
       }
       completedDate.setHours(0, 0, 0, 0);
-      if (completedDate.getTime() <= today.getTime()) {
-        completedDates.push(completedDate);
-      }
+      // Calendar tasks can be completed on any editable date. Do not discard
+      // a persisted completion merely because it is later than the device's
+      // current date; doing so keeps a valid multi-day streak stuck at one.
+      completedDates.push(completedDate);
     });
     completedDates.sort((left: Date, right: Date) => left.getTime() - right.getTime());
 
@@ -592,7 +646,12 @@ export class HomeStore {
   reconcileHistoricalAchievements() {
     this.queryAllDayInfo().then((dayInfoList: DayInfo[]) => {
       if (dayInfoList.some((dayInfo: DayInfo) => this.isDayInfoComplete(dayInfo))) {
-        this.updateAchievement().catch((error: Error) => {
+        this.updateAchievement().then((achievementLevel: number) => {
+          if (ACHIEVEMENT_LEVEL_LIST.includes(achievementLevel)) {
+            HealthDataSrcMgr.getInstance().getBroadCast()
+              .emit(BroadCastType.SHOW_ACHIEVEMENT_DIALOG, achievementLevel);
+          }
+        }).catch((error: Error) => {
           Logger.error('reconcileHistoricalAchievements', JSON.stringify(error));
         });
       }

@@ -43,6 +43,7 @@ struct Index {
   @State editedTaskID: string = '0';
   @State homeStore: HomeStore = new HomeStore(new Date());
   @State moodRefreshToken: number = 0;
+  @State profileRefreshToken: number = 0;
   private tabController: TabsController = new TabsController();
 
   aboutToAppear() {
@@ -142,7 +143,7 @@ struct Index {
       .tabBar(this.TabBuilder(TabId.ACHIEVEMENT))
 
       TabContent() {
-        ProfilePage()
+        ProfilePage({ refreshToken: this.profileRefreshToken })
       }
       .tabBar(this.TabBuilder(TabId.PROFILE))
     }
@@ -154,6 +155,15 @@ struct Index {
     .onChange((index) => {
       this.currentPage = index;
       this.moodRefreshToken += 1;
+      if (index === TabId.HOME) {
+        this.homeStore.requestCalendarScroll();
+      }
+    })
+    .onTabBarClick((index) => {
+      this.moodRefreshToken += 1;
+      if (index === TabId.PROFILE) {
+        this.profileRefreshToken += 1;
+      }
     })
   }
 }

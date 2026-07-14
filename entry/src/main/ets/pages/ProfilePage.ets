@@ -8,6 +8,9 @@ import UserProfile from '../model/UserProfile';
 import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import { UserBaseInfo } from '../view/UserBaseInfo';
 import { ListInfo } from '../view/ListInfo';
+import { UserLevelInfo as UserLevelCard } from '../view/UserLevelInfo';
+import Logger from '../common/utils/Logger';
+import { queryUserLevel, UserLevelInfo } from '../viewmodel/UserLevelViewModel';
 
 const PAGE_PADDING: number = 20;
 const CARD_RADIUS: number = 18;
@@ -19,32 +22,30 @@ interface DefaultAvatarOption {
   image: Resource;
 }
 
-const DEFAULT_PERSON_AVATARS: DefaultAvatarOption[] = [
+const DEFAULT_AVATARS: DefaultAvatarOption[] = [
   { id: 'male', label: '男生', image: $r('app.media.avatar_male') },
-  { id: 'female', label: '女生', image: $r('app.media.avatar_female') }
-];
-
-const DEFAULT_HEALTH_AVATARS: DefaultAvatarOption[] = [
-  { id: 'health_01', label: '健康 01', image: $r('app.media.avatar_health_01') },
-  { id: 'health_02', label: '健康 02', image: $r('app.media.avatar_health_02') },
-  { id: 'health_03', label: '健康 03', image: $r('app.media.avatar_health_03') },
-  { id: 'health_04', label: '健康 04', image: $r('app.media.avatar_health_04') },
-  { id: 'health_05', label: '健康 05', image: $r('app.media.avatar_health_05') },
-  { id: 'health_06', label: '健康 06', image: $r('app.media.avatar_health_06') },
-  { id: 'health_07', label: '健康 07', image: $r('app.media.avatar_health_07') },
-  { id: 'health_08', label: '健康 08', image: $r('app.media.avatar_health_08') },
-  { id: 'health_09', label: '健康 09', image: $r('app.media.avatar_health_09') },
-  { id: 'health_10', label: '健康 10', image: $r('app.media.avatar_health_10') },
-  { id: 'health_11', label: '健康 11', image: $r('app.media.avatar_health_11') },
-  { id: 'health_12', label: '健康 12', image: $r('app.media.avatar_health_12') },
-  { id: 'health_13', label: '健康 13', image: $r('app.media.avatar_health_13') },
-  { id: 'health_14', label: '健康 14', image: $r('app.media.avatar_health_14') },
-  { id: 'health_15', label: '健康 15', image: $r('app.media.avatar_health_15') },
-  { id: 'health_16', label: '健康 16', image: $r('app.media.avatar_health_16') }
+  { id: 'female', label: '女生', image: $r('app.media.avatar_female') },
+  { id: 'health_01', label: '绿叶', image: $r('app.media.avatar_health_01') },
+  { id: 'health_02', label: '水滴', image: $r('app.media.avatar_health_02') },
+  { id: 'health_03', label: '牙刷', image: $r('app.media.avatar_health_03') },
+  { id: 'health_04', label: '苹果', image: $r('app.media.avatar_health_04') },
+  { id: 'health_05', label: '哑铃', image: $r('app.media.avatar_health_05') },
+  { id: 'health_06', label: '跑鞋', image: $r('app.media.avatar_health_06') },
+  { id: 'health_07', label: '瑜伽垫', image: $r('app.media.avatar_health_07') },
+  { id: 'health_08', label: '微笑', image: $r('app.media.avatar_health_08') },
+  { id: 'health_09', label: '月亮', image: $r('app.media.avatar_health_09') },
+  { id: 'health_10', label: '阳光', image: $r('app.media.avatar_health_10') },
+  { id: 'health_11', label: '闹钟', image: $r('app.media.avatar_health_11') },
+  { id: 'health_12', label: '爱心', image: $r('app.media.avatar_health_12') },
+  { id: 'health_13', label: '单车', image: $r('app.media.avatar_health_13') },
+  { id: 'health_14', label: '沙拉', image: $r('app.media.avatar_health_14') },
+  { id: 'health_15', label: '药瓶', image: $r('app.media.avatar_health_15') },
+  { id: 'health_16', label: '鲜花', image: $r('app.media.avatar_health_16') }
 ];
 
 @Component
 export struct ProfilePage {
+  @Prop @Watch('refreshLevel') refreshToken: number = 0;
   @State avatarUri: string = '';
   @State avatarId: string = '';
   @State nickname: string = Const.NICK_NAME;
@@ -57,11 +58,34 @@ export struct ProfilePage {
   @State isEditMode: boolean = false;
   @State showDetails: boolean = false;
   @State showAvatarPicker: boolean = false;
+  @State level: number = 0;
+  @State currentExperience: number = 0;
+  @State completedTaskCount: number = 0;
   @StorageProp(Const.ALLOW_EDIT_PAST_KEY) allowEditPast: boolean = Const.ALLOW_EDIT_PAST_DEFAULT;
   private readonly genderOptions: string[] = ['男', '女', '保密'];
+  private levelLoadId: number = 0;
 
   aboutToAppear(): void {
     this.loadProfile();
+    this.loadLevel();
+  }
+
+  private refreshLevel(): void {
+    this.loadLevel();
+  }
+
+  private loadLevel(): void {
+    const loadId = ++this.levelLoadId;
+    queryUserLevel().then((levelInfo: UserLevelInfo) => {
+      if (loadId !== this.levelLoadId) {
+        return;
+      }
+      this.level = levelInfo.level;
+      this.currentExperience = levelInfo.currentExperience;
+      this.completedTaskCount = levelInfo.completedTaskCount;
+    }).catch((error: Error) => {
+      Logger.error('ProfilePage', `load user level failed: ${JSON.stringify(error)}`);
+    });
   }
 
   private getAbilityContext(): common.UIAbilityContext {
@@ -97,12 +121,20 @@ export struct ProfilePage {
       if (result.photoUris.length === 0) {
         return;
       }
-      const targetPath = `${this.getAbilityContext().filesDir}/profile_avatar_${Date.now()}`;
-      await fs.copyFile(result.photoUris[0], targetPath);
+      const targetPath = `${this.getAbilityContext().filesDir}/profile_avatar_${Date.now()}.img`;
+      // PhotoViewPicker returns a media URI rather than an application sandbox path.
+      // Open the URI while the picker grant is valid, then copy through its file descriptor.
+      const sourceFile = await fs.open(result.photoUris[0], fs.OpenMode.READ_ONLY);
+      try {
+        await fs.copyFile(sourceFile.fd, targetPath);
+      } finally {
+        await fs.close(sourceFile);
+      }
       this.avatarUri = `file://${targetPath}`;
       this.avatarId = '';
       this.showAvatarPicker = false;
     } catch (error) {
+      Logger.error('ProfilePage', `choose avatar failed: ${JSON.stringify(error)}`);
       promptAction.showToast({ message: '未能选择头像' });
     }
   }
@@ -683,42 +715,17 @@ export struct ProfilePage {
           }
           .width('100%')
 
-          Text('人物头像')
-            .width('100%')
-            .fontSize(14)
-            .fontColor('#7A818A')
-          Row({ space: 16 }) {
-            ForEach(DEFAULT_PERSON_AVATARS, (option: DefaultAvatarOption) => {
-              Column({ space: 6 }) {
-                Image(option.image)
-                  .width(68)
-                  .height(68)
-                  .borderRadius(34)
-                  .objectFit(ImageFit.Contain)
-                  .backgroundColor('#F1F3F5')
-                Text(option.label)
-                  .fontSize(13)
-                  .fontColor('#182431')
-              }
-              .layoutWeight(1)
-              .onClick(() => this.selectDefaultAvatar(option))
-            }, (option: DefaultAvatarOption) => option.id)
-          }
-          .width('100%')
-
-          Text('健康生活')
-            .width('100%')
-            .fontSize(14)
-            .fontColor('#7A818A')
           Scroll() {
             Grid() {
-              ForEach(DEFAULT_HEALTH_AVATARS, (option: DefaultAvatarOption) => {
+              ForEach(DEFAULT_AVATARS, (option: DefaultAvatarOption) => {
                 GridItem() {
                   Column({ space: 4 }) {
                     Image(option.image)
                       .width(48)
                       .height(48)
+                      .borderRadius(24)
                       .objectFit(ImageFit.Contain)
+                      .backgroundColor('#F1F3F5')
                     Text(option.label)
                       .fontSize(12)
                       .fontColor('#182431')
@@ -728,9 +735,9 @@ export struct ProfilePage {
                 }
               }, (option: DefaultAvatarOption) => option.id)
             }
-            .columnsTemplate('1fr 1fr 1fr')
-            .rowsGap(10)
-            .columnsGap(8)
+            .columnsTemplate('1fr 1fr 1fr 1fr')
+            .rowsGap(8)
+            .columnsGap(4)
           }
           .height(300)
           .scrollBar(BarState.Off)
@@ -770,6 +777,12 @@ export struct ProfilePage {
         signature: this.signature.length > 0 ? this.signature : Const.SIGNATURE,
         avatarUri: this.avatarUri,
         avatarId: this.avatarId
+      })
+
+      UserLevelCard({
+        level: this.level,
+        currentExperience: this.currentExperience,
+        completedTaskCount: this.completedTaskCount
       })
 
       ListInfo({

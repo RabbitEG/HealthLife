@@ -1,5 +1,5 @@
 import common from '@ohos.app.ability.common';
-import { dateToStr, sameMonth } from '../common/utils/Utils';
+import { dateToStr } from '../common/utils/Utils';
 import MoodStorage, { MoodRecord } from '../common/utils/MoodStorage';
 import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import { HomeStore } from '../viewmodel/HomeViewModel';
@@ -8,13 +8,12 @@ interface MoodDayItem {
   day: number;
   timestamp: number;
   dateStr: string;
-  inCurrentMonth: boolean;
+  isPlaceholder: boolean;
   mood: string;
   note: string;
 }
 
-/** Month grid for the mood journal.  The task page has its own unchanged
- * calendar entry point, so this tab only renders mood records. */
+/** Month grid for mood journal records only. */
 @Component
 export struct MineIndex {
   @ObjectLink homeStore: HomeStore;
@@ -28,15 +27,12 @@ export struct MineIndex {
   private monthLoadId: number = 0;
 
   aboutToAppear(): void {
-    this.monthAnchor = this.homeStore.showDate;
     this.loadMonth();
   }
 
   refreshMonth(): void {
-    // The selected date on the task page is the date the user just edited.
-    // Re-anchor the month before reloading so a historical update is visible
-    // even when the calendar tab was previously left on another month.
-    this.monthAnchor = this.homeStore.showDate;
+    // Keep the journal's month cursor while refreshing its records. Explicitly
+    // clicking a day still synchronizes that date with the home week strip.
     this.showDetail = false;
     this.loadMonth();
   }
@@ -51,18 +47,30 @@ export struct MineIndex {
     const loadId = ++this.monthLoadId;
     const firstDay = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const mondayOffset = (firstDay.getDay() + 6) % 7;
-    const gridStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1 - mondayOffset);
     const lastDayOfMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
     const totalRows = Math.ceil((mondayOffset + lastDayOfMonth.getDate()) / 7);
     const totalCells = totalRows * 7;
     const items: MoodDayItem[] = [];
     for (let index = 0; index < totalCells; index++) {
-      const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
+      const day = index - mondayOffset + 1;
+      if (day < 1 || day > lastDayOfMonth.getDate()) {
+        items.push({
+          day: 0,
+          timestamp: 0,
+          dateStr: `blank-${anchor.getFullYear()}-${anchor.getMonth()}-${index}`,
+          isPlaceholder: true,
+          mood: '',
+          note: ''
+        } as MoodDayItem);
+        continue;
+      }
+      const date = new Date(anchor.getFullYear(), anchor.getMonth(), day);
+      const dateStr = dateToStr(date);
       items.push({
-        day: date.getDate(),
+        day: day,
         timestamp: date.getTime(),
-        dateStr: dateToStr(date),
-        inCurrentMonth: sameMonth(date, anchor),
+        dateStr: dateStr,
+        isPlaceholder: false,
         mood: '',
         note: ''
       } as MoodDayItem);
@@ -120,6 +128,7 @@ export struct MineIndex {
     this.detailMood = item.mood;
     this.detailNote = item.note;
     this.showDetail = true;
+    this.homeStore.selectCalendarDate(item.timestamp, () => {});
   }
 
   @Builder
@@ -169,19 +178,25 @@ export struct MineIndex {
     Grid() {
       ForEach(this.monthDays, (item: MoodDayItem) => {
         GridItem() {
-          Column({ space: 4 }) {
-            Text(`${item.day}`)
-              .fontSize(Const.DEFAULT_14)
-              .fontColor(item.inCurrentMonth ? $r('app.color.titleColor') : $r('app.color.disabledColor'))
-            Text(this.getMoodEmoji(item.mood) || '·')
-              .fontSize(Const.DEFAULT_24)
-              .height(Const.DEFAULT_28)
-              .opacity(item.mood.length > 0 ? 1 : Const.OPACITY_4)
+          if (item.isPlaceholder) {
+            Blank()
+              .width(Const.FULL_WIDTH)
+              .height(64)
+          } else {
+            Column({ space: 4 }) {
+              Text(`${item.day}`)
+                .fontSize(Const.DEFAULT_14)
+                .fontColor($r('app.color.titleColor'))
+              Text(this.getMoodEmoji(item.mood) || '·')
+                .fontSize(Const.DEFAULT_24)
+                .height(Const.DEFAULT_28)
+                .opacity(item.mood.length > 0 ? 1 : Const.OPACITY_4)
+            }
+            .width(Const.FULL_WIDTH)
+            .height(64)
+            .justifyContent(FlexAlign.Center)
+            .onClick(() => this.openDetail(item))
           }
-          .width(Const.FULL_WIDTH)
-          .height(64)
-          .justifyContent(FlexAlign.Center)
-          .onClick(() => this.openDetail(item))
         }
       }, (item: MoodDayItem) => item.dateStr)
     }

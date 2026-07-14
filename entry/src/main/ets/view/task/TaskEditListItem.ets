@@ -96,6 +96,29 @@ export struct TargetSetItem {
 @Component
 export struct OpenRemindItem {
   @Consume settingParams: ITaskItem;
+  @State alarmToggle: boolean = false;
+  private dialogController: CustomDialogController = new CustomDialogController({
+    builder: RemindConfirmDialog({
+      onAgree: () => {
+        this.alarmToggle = true;
+        this.settingParams.isAlarm = true;
+      },
+      onRefuse: () => {
+        this.alarmToggle = false;
+        this.settingParams.isAlarm = false;
+      }
+    }),
+    alignment: DialogAlignment.Center,
+    autoCancel: false,
+    cancel: () => {
+      this.alarmToggle = false;
+      this.settingParams.isAlarm = false;
+    }
+  });
+
+  aboutToAppear() {
+    this.alarmToggle = this.settingParams?.isAlarm ?? false;
+  }
 
   build() {
     Row() {
@@ -103,16 +126,63 @@ export struct OpenRemindItem {
         .fontSize(Const.DEFAULT_20)
         .fontWeight(FontWeight.Medium)
 
-      Toggle({ type: ToggleType.Switch, isOn: this.settingParams?.isAlarm })
+      Toggle({ type: ToggleType.Switch, isOn: this.alarmToggle })
         .width(Const.DEFAULT_56)
         .height(Const.DEFAULT_32)
         .selectedColor($r('app.color.blueColor'))
         .onChange((isOn) => {
-          this.settingParams.isAlarm = isOn;
+          if (isOn) {
+            this.alarmToggle = true;
+            this.dialogController.open();
+          } else {
+            this.alarmToggle = false;
+            this.settingParams.isAlarm = false;
+          }
         })
     }
     .width(Const.THOUSANDTH_1000)
     .justifyContent(FlexAlign.SpaceBetween)
+  }
+}
+
+@CustomDialog
+struct RemindConfirmDialog {
+  controller: CustomDialogController = new CustomDialogController({ builder: '' });
+  onAgree: () => void = () => {};
+  onRefuse: () => void = () => {};
+
+  build() {
+    Column() {
+      Text('开启提醒')
+        .fontSize(Const.DEFAULT_20)
+        .fontWeight(FontWeight.Medium)
+        .margin({ bottom: Const.DEFAULT_16 })
+      Text('开启提醒将连接日历或闹钟应用为您发送提醒通知，是否同意？')
+        .fontSize(Const.DEFAULT_14)
+        .margin({ bottom: Const.DEFAULT_24 })
+      Row({ space: Const.DEFAULT_24 }) {
+        Button('不同意')
+          .fontSize(Const.DEFAULT_16)
+          .fontColor($r('app.color.titleColor'))
+          .backgroundColor($r('app.color.btnBgColor'))
+          .layoutWeight(1)
+          .onClick(() => {
+            this.onRefuse();
+            this.controller.close();
+          })
+        Button('同意')
+          .fontSize(Const.DEFAULT_16)
+          .fontColor($r('app.color.white'))
+          .backgroundColor($r('app.color.blueColor'))
+          .layoutWeight(1)
+          .onClick(() => {
+            this.onAgree();
+            this.controller.close();
+          })
+      }
+      .width(Const.THOUSANDTH_1000)
+    }
+    .padding(Const.DEFAULT_24)
   }
 }
 
@@ -164,13 +234,14 @@ export struct EffectiveRangeItem {
         .fontWeight(FontWeight.Medium)
         .width(Const.THOUSANDTH_1000)
         .textAlign(TextAlign.Start)
-      Row({ space: Const.DEFAULT_8 }) {
+      Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Start }) {
         Text('仅所选日期')
           .fontSize(Const.DEFAULT_14)
           .fontColor(this.settingParams.repeatEnabled === false ? $r('app.color.white') : $r('app.color.titleColor'))
           .backgroundColor(this.settingParams.repeatEnabled === false ? $r('app.color.blueColor') : $r('app.color.btnBgColor'))
           .borderRadius(Const.DEFAULT_8)
           .padding({ left: Const.DEFAULT_12, right: Const.DEFAULT_12, top: Const.DEFAULT_8, bottom: Const.DEFAULT_8 })
+          .margin({ right: Const.DEFAULT_8, bottom: Const.DEFAULT_8 })
           .onClick(() => {
             this.settingParams.repeatEnabled = false;
           })
@@ -180,8 +251,10 @@ export struct EffectiveRangeItem {
           .backgroundColor(this.settingParams.repeatEnabled !== false ? $r('app.color.blueColor') : $r('app.color.btnBgColor'))
           .borderRadius(Const.DEFAULT_8)
           .padding({ left: Const.DEFAULT_12, right: Const.DEFAULT_12, top: Const.DEFAULT_8, bottom: Const.DEFAULT_8 })
+          .margin({ bottom: Const.DEFAULT_8 })
           .onClick(() => {
             this.settingParams.repeatEnabled = true;
+            this.settingParams.planStartDate = this.settingParams.date || new Date().toDateString();
           })
       }
       .width(Const.THOUSANDTH_1000)

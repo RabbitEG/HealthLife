@@ -168,7 +168,9 @@ export default struct TaskDetail {
             ListItem() {
               EffectiveRangeItem()
             }
-            .listItemStyle()
+            .backgroundColor($r('app.color.white'))
+            .borderRadius(Const.DEFAULT_10)
+            .padding({ left: Const.DEFAULT_12, right: Const.DEFAULT_12, top: Const.DEFAULT_12, bottom: Const.DEFAULT_12 })
           }
 
         }
