@@ -53,11 +53,18 @@ export default class EntryAbility extends UIAbility {
     });
     RdbUtils.createTable(Const.TASK_INFO.tableName ? Const.TASK_INFO.tableName : '', columnTaskInfoInfoList).then(() => {
       Logger.info(`RdbHelper createTable taskInfo success`);
+      // Migrate databases created by older builds. Adding an already existing
+      // column is harmless; the rejected promise is intentionally ignored.
+      const migrateTaskColumn = (column: ColumnInfo): void => {
+        RdbUtils.addTableColumn(Const.TASK_INFO.tableName ? Const.TASK_INFO.tableName : '', column)
+          .catch(() => {
+          });
+      };
+      migrateTaskColumn(new ColumnInfo('inputHistory', 'text', -1, true, false, false));
+      migrateTaskColumn(new ColumnInfo('planStartDate', 'text', -1, true, false, false));
+      migrateTaskColumn(new ColumnInfo('isRecurring', 'boolean', -1, true, false, false));
     }).catch((err: Error) => {
       Logger.error(`RdbHelper taskInfo err : ${JSON.stringify(err)}`);
-      RdbUtils.addTableColumn(Const.TASK_INFO.tableName ? Const.TASK_INFO.tableName : '', new ColumnInfo('inputHistory', 'text', -1, true, false, false)).catch((e: Error) => {
-        Logger.error(`RdbHelper addColumn inputHistory : ${JSON.stringify(e)}`);
-      });
     });
     RdbUtils.createTable(Const.FORM_INFO.tableName ? Const.FORM_INFO.tableName : '', columnFormInfoList)
       .catch((err: Error) => {

@@ -1,8 +1,11 @@
 import DayInfoApi from '../../common/database/tables/DayInfoApi';
 import DayInfo from '../../viewmodel/DayInfo';
-import { dateToStr } from '../../common/utils/Utils';
+import { dateToStr, sameMonth } from '../../common/utils/Utils';
 import { HomeStore } from '../../viewmodel/HomeViewModel';
 import { CommonConstants as Const } from '../../common/constants/CommonConstants';
+import DatabaseApi from '../../model/DatabaseModel';
+import TaskInfoApi from '../../common/database/tables/TaskInfoApi';
+import TaskInfo from '../../viewmodel/TaskInfo';
 
 interface MonthDayItem {
   day: number;
@@ -18,6 +21,7 @@ export struct MonthCalendarView {
   closeAction: Function = () => {};
   @State monthAnchor: number = new Date().getTime();
   @State monthDays: MonthDayItem[] = [];
+  private monthLoadId: number = 0;
 
   aboutToAppear() {
     this.monthAnchor = this.homeStore.showDate;
@@ -31,12 +35,17 @@ export struct MonthCalendarView {
 
   loadMonth() {
     const anchor = new Date(this.monthAnchor);
+    const loadId = ++this.monthLoadId;
     const firstDay = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const mondayOffset = (firstDay.getDay() + 6) % 7;
     const gridStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1 - mondayOffset);
+    const lastDayOfMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+    const lastMondayOffset = (lastDayOfMonth.getDay() + 6) % 7;
+    const totalRows = Math.ceil((mondayOffset + lastDayOfMonth.getDate()) / 7);
+    const totalCells = totalRows * 7;
     const dates: string[] = [];
     const items: MonthDayItem[] = [];
-    for (let index = 0; index < 42; index++) {
+    for (let index = 0; index < totalCells; index++) {
       const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
       const dateStr = dateToStr(date);
       dates.push(dateStr);
@@ -44,18 +53,68 @@ export struct MonthCalendarView {
         day: date.getDate(),
         timestamp: date.getTime(),
         dateStr: dateStr,
-        inCurrentMonth: date.getMonth() === anchor.getMonth(),
+        inCurrentMonth: sameMonth(date, anchor),
         progress: 0
       } as MonthDayItem);
     }
     DayInfoApi.queryList(dates, (records: DayInfo[]) => {
-      items.forEach((item: MonthDayItem) => {
-        const record = records.find((value: DayInfo) => value.date === item.dateStr);
-        if (record && record.targetTaskNum > 0) {
-          item.progress = Math.min(100, Math.round(record.finTaskNum / record.targetTaskNum * 100));
-        }
+      if (loadId !== this.monthLoadId) {
+        return;
+      }
+      // Most dates already have a dayInfo summary.  The leading/trailing
+      // cells of a month grid can be outside the viewed month, however, and
+      // those dates may not have been visited by the week view yet.  Lazily
+      // materialize the plan and calculate the missing summary from the
+      // date-specific task rows so their badges are consistent as well.
+      const missingItems = items.filter((item: MonthDayItem) => {
+        return !records.some((value: DayInfo) => value.date === item.dateStr);
       });
-      this.monthDays = items.slice();
+      const queryTasks = (date: string): Promise<TaskInfo[]> => {
+        return new Promise((resolve: (tasks: TaskInfo[]) => void) => {
+          TaskInfoApi.query(date, false, (tasks: TaskInfo[]) => resolve(tasks));
+        });
+      };
+      const missingProgress = missingItems.map((item: MonthDayItem) => {
+        return DatabaseApi.ensureTasksForDate(item.dateStr)
+          .catch(() => {
+            // A missing plan must still be rendered as an empty day when the
+            // database is temporarily unavailable.
+          })
+          .then(() => queryTasks(item.dateStr))
+          .then((tasks: TaskInfo[]) => {
+            const openTasks = tasks.filter((task: TaskInfo) => task.isOpen);
+            const finishedTasks = openTasks.filter((task: TaskInfo) => task.isDone).length;
+            const dayInfo = new DayInfo(item.dateStr, openTasks.length, finishedTasks);
+            item.progress = dayInfo.targetTaskNum > 0
+              ? Math.min(100, Math.round(dayInfo.finTaskNum / dayInfo.targetTaskNum * 100))
+              : 0;
+            // Keep the summary table in sync for later month/week renders.
+            return new Promise<void>((resolve: () => void) => {
+              DayInfoApi.updateData(dayInfo, (updated: number) => {
+                if (updated) {
+                  resolve();
+                } else {
+                  DayInfoApi.insertData(dayInfo, () => resolve());
+                }
+              });
+            });
+          })
+          .catch(() => {
+            item.progress = 0;
+          });
+      });
+      Promise.all(missingProgress).then(() => {
+        if (loadId !== this.monthLoadId) {
+          return;
+        }
+        items.forEach((item: MonthDayItem) => {
+          const record = records.find((value: DayInfo) => value.date === item.dateStr);
+          if (record && record.targetTaskNum > 0) {
+            item.progress = Math.min(100, Math.round(record.finTaskNum / record.targetTaskNum * 100));
+          }
+        });
+        this.monthDays = items.slice();
+      });
     });
   }
 
@@ -68,11 +127,10 @@ export struct MonthCalendarView {
   getCurrentProgress(item: MonthDayItem): number {
     const liveDate = this.homeStore.dateArr.find((dateItem) => dateItem.dateStr === item.dateStr);
     if (liveDate) {
-      if (!liveDate.dayInfo || liveDate.dayInfo.targetTaskNum <= 0) {
-        return 0;
+      if (liveDate.dayInfo && liveDate.dayInfo.targetTaskNum > 0) {
+        return Math.min(100,
+          Math.round(liveDate.dayInfo.finTaskNum / liveDate.dayInfo.targetTaskNum * 100));
       }
-      return Math.min(100,
-        Math.round(liveDate.dayInfo.finTaskNum / liveDate.dayInfo.targetTaskNum * 100));
     }
     return item.progress;
   }

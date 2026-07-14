@@ -34,7 +34,9 @@ export const columnTaskInfoInfoList: Array<ColumnInfo> = [
   new ColumnInfo('cycleDays', 'text', -1, false, false, false),
   new ColumnInfo('cycleTarget', 'integer', -1, true, false, false),
   new ColumnInfo('dataSrc', 'text', -1, false, false, false),
-  new ColumnInfo('inputHistory', 'text', -1, true, false, false)
+  new ColumnInfo('inputHistory', 'text', -1, true, false, false),
+  new ColumnInfo('planStartDate', 'text', -1, true, false, false),
+  new ColumnInfo('isRecurring', 'boolean', -1, true, false, false)
 ];
 
 export const columnFormInfoList: Array<ColumnInfo> = [

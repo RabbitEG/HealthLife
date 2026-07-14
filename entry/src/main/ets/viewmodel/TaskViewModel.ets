@@ -17,8 +17,8 @@ import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import Logger from '../common/utils/Logger';
 import reminder from '../service/ReminderAgent';
 import TaskInfoApi from '../common/database/tables/TaskInfoApi';
-import { padTo2Digits } from '../common/utils/Utils';
-import TaskInfo, { oneWeek, TaskStatus } from './TaskInfo';
+import { dateToStr, padTo2Digits } from '../common/utils/Utils';
+import TaskInfo, { oneWeek, TaskStatus, TaskTypeEnum, SubTaskInfo } from './TaskInfo';
 import { TaskMapById, RemindContentMap, ITaskItem } from '../model/TaskInitList';
 import PublishReminderInfo from './PublishReminderInfo';
 
@@ -26,6 +26,85 @@ const publishReminder = reminder.publishReminder;
 const cancelReminder = reminder.cancelReminder;
 const hasNotificationId = reminder.hasNotificationId;
 export const taskOriginData: ITaskItem[] = TaskMapById;
+
+const PLAN_HORIZON_DAYS = 366;
+
+function dateAtMidnight(dateStr: string): Date {
+  let date = new Date(dateStr);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function isPastDate(dateStr: string): boolean {
+  return dateAtMidnight(dateStr).getTime() < dateAtMidnight(new Date().toDateString()).getTime();
+}
+
+function isFutureDate(dateStr: string): boolean {
+  return dateAtMidnight(dateStr).getTime() > dateAtMidnight(new Date().toDateString()).getTime();
+}
+
+function isFrequencyDate(date: Date, frequency: string): boolean {
+  if (!frequency || frequency.trim().length === 0) {
+    return true;
+  }
+  const frequencyIds = frequency.split(',')
+    .map((item: string) => Number(item.trim()))
+    .filter((item: number) => !Number.isNaN(item));
+  if (frequencyIds.length === 0) {
+    return true;
+  }
+  // The setting dialog uses Monday=1 ... Sunday=7 while Date.getDay()
+  // uses Sunday=0 ... Saturday=6.
+  const dayId = date.getDay() === 0 ? 7 : date.getDay();
+  return frequencyIds.indexOf(dayId) >= 0;
+}
+
+function queryTasksOfDate(date: string): Promise<TaskInfo[]> {
+  return new Promise((resolve) => {
+    TaskInfoApi.query(date, false, (tasks: TaskInfo[]) => resolve(tasks));
+  });
+}
+
+function saveTaskRecord(taskInfo: TaskInfo): Promise<number> {
+  return new Promise((resolve, reject) => {
+    TaskInfoApi.updateDataByDate(taskInfo, (updateFlag: number) => {
+      if (updateFlag) {
+        resolve(updateFlag);
+        return;
+      }
+      TaskInfoApi.insertData(taskInfo, (insertFlag: number) => {
+        if (!insertFlag) {
+          reject(new Error(`save task failed: ${taskInfo.date}/${taskInfo.taskID}`));
+          return;
+        }
+        resolve(insertFlag);
+      });
+    });
+  });
+}
+
+function copyTaskProgress(target: TaskInfo, source: TaskInfo): void {
+  target.isDone = source.isDone;
+  target.finValue = source.finValue;
+  target.status = source.status;
+  target.subTasks = source.subTasks;
+  target.inputHistory = source.inputHistory;
+}
+
+function markInitialTaskCompleted(taskInfo: TaskInfo): void {
+  taskInfo.isDone = true;
+  taskInfo.status = TaskStatus.COMPLETED;
+  taskInfo.finValue = taskInfo.targetValue;
+  if (taskInfo.taskType === TaskTypeEnum.SUB_TASK && taskInfo.subTasks) {
+    try {
+      const subTasks = JSON.parse(taskInfo.subTasks) as Array<SubTaskInfo>;
+      subTasks.forEach((subTask) => subTask.isDone = true);
+      taskInfo.subTasks = JSON.stringify(subTasks);
+    } catch (error) {
+      Logger.warn('addTask', `invalid subTasks: ${JSON.stringify(error)}`);
+    }
+  }
+}
 
 /**
  * @description Get all task status
@@ -58,10 +137,13 @@ const useReminder = (params: TaskInfo, context: Context) => {
     let publishReminderInfo = new PublishReminderInfo();
     publishReminderInfo.hour = Number(params?.startTime.split(':')[0]);
     publishReminderInfo.minute = Number(params?.startTime.split(':')[1]);
-    publishReminderInfo.daysOfWeek = params?.frequency.split(',').map(item => Number(item));
+    publishReminderInfo.daysOfWeek = params?.frequency && params.frequency.trim().length > 0
+      ? params.frequency.split(',').map(item => Number(item.trim()))
+      : [1, 2, 3, 4, 5, 6, 7];
     publishReminderInfo.title = RemindContentMap[params?.taskID - 1].title;
     publishReminderInfo.content = RemindContentMap[params?.taskID - 1].content;
     publishReminderInfo.notificationId = params?.taskID;
+    publishReminderInfo.oneOffDate = params?.isRecurring ? '' : (params?.planStartDate || params?.date || '');
     publishReminder(publishReminderInfo, context);
   } catch (error) {
     Logger.error('publishReminder', JSON.stringify(error));
@@ -102,66 +184,139 @@ export const addTask = (params: TaskInfo, context: Context, targetDate?: string)
   }
   return new Promise<number>(async (resolve, reject) => {
     Logger.info('TaskViewModel', 'addTask');
-    if (params?.isOpen) {
-      if (params?.isAlarm) {
-        useReminder(params, context);
+    const taskDate = targetDate || params.date || new Date().toDateString();
+    const pastDate = isPastDate(taskDate);
+    // Historical entries are always one-off. For today and future dates the
+    // UI defaults to a recurring plan unless the user explicitly selects the
+    // one-off option.
+    const isRecurringPlan = !pastDate && params.repeatEnabled !== false;
+    const planStartDate = params.planStartDate || taskDate;
+    const planStartsInFuture = isFutureDate(planStartDate);
+
+    const saveDateTask = async (date: string, preserveProgress: boolean): Promise<number> => {
+      const dateTasks = await queryTasksOfDate(date);
+      const currentTask = dateTasks.find((item: TaskInfo) => item.taskID === params.taskID);
+      const taskInfo = JSON.parse(JSON.stringify(params)) as TaskInfo;
+      taskInfo.date = date;
+      taskInfo.planStartDate = isRecurringPlan ? planStartDate : date;
+      taskInfo.isRecurring = isRecurringPlan;
+      taskInfo.isDone = false;
+      taskInfo.finValue = '';
+      taskInfo.status = TaskStatus.NOT_STARTED;
+      taskInfo.inputHistory = '';
+      // Editing an active record keeps that day's independent progress. New
+      // records (including future occurrences) always start unfinished.
+      if (preserveProgress && params.isOpen && currentTask?.isOpen) {
+        copyTaskProgress(taskInfo, currentTask);
+      } else if (!pastDate && date === taskDate && params.isOpen && !currentTask?.isOpen) {
+        // The first activation is recorded as completed for the selected
+        // day. Future recurring occurrences still start unfinished because
+        // only the selected date enters this branch.
+        markInitialTaskCompleted(taskInfo);
+      }
+      return saveTaskRecord(taskInfo);
+    };
+
+    try {
+      if (isRecurringPlan) {
+        const globalTask = JSON.parse(JSON.stringify(params)) as TaskInfo;
+        globalTask.date = Const.GLOBAL_KEY;
+        globalTask.planStartDate = planStartDate;
+        globalTask.isRecurring = true;
+        globalTask.isDone = false;
+        globalTask.finValue = '';
+        globalTask.status = TaskStatus.NOT_STARTED;
+        globalTask.inputHistory = '';
+        await saveTaskRecord(globalTask);
+
+        // Materialize a year of occurrences immediately. DatabaseModel also
+        // lazily creates later dates from this global plan when they are first
+        // opened, so the plan is not limited to this window.
+        let cursor = dateAtMidnight(planStartDate);
+        for (let index = 0; index < PLAN_HORIZON_DAYS; index++) {
+          if (isFrequencyDate(cursor, params.frequency)) {
+            // Every already-created occurrence owns its own progress. Keep
+            // that progress when a plan is edited; only genuinely new rows
+            // are initialized as unfinished by saveDateTask.
+            await saveDateTask(dateToStr(cursor), true);
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
       } else {
+        // A historical entry and an explicit one-off entry only touch the
+        // selected date. In particular, they never rewrite the global plan.
+        await saveDateTask(taskDate, true);
+        if (!pastDate && !isRecurringPlan) {
+          // Turning an existing current/future plan off also stops future
+          // occurrences; the selected one-off record above remains local.
+          const globalTask = JSON.parse(JSON.stringify(params)) as TaskInfo;
+          globalTask.date = Const.GLOBAL_KEY;
+          globalTask.isOpen = false;
+          globalTask.isAlarm = false;
+          globalTask.isRecurring = false;
+          globalTask.planStartDate = '';
+          await saveTaskRecord(globalTask);
+        }
+      }
+
+      // Historical edits never touch reminders. A one-off future task can be
+      // represented by a calendar reminder immediately, while a recurring
+      // plan whose start date is still in the future is synchronized when its
+      // start date arrives. Turning a non-historical task off always cancels
+      // any reminder that may belong to the previous plan.
+      const canPublishReminder = !pastDate && params?.isOpen && params?.isAlarm
+        && (!isRecurringPlan || !planStartsInFuture);
+      const shouldCancelReminder = !pastDate && (!params?.isOpen || !params?.isAlarm);
+      if (canPublishReminder) {
+        useReminder(params, context);
+      } else if (shouldCancelReminder) {
         isHasNotificationId(params?.taskID).then((flag: boolean) => {
           if (flag) {
             useCancelReminder(params.taskID, context);
           }
         });
       }
-    } else {
-      isHasNotificationId(params?.taskID).then((flag: boolean) => {
-        if (flag) {
-          useCancelReminder(params.taskID, context);
-        }
-      });
+      resolve(1);
+    } catch (error) {
+      Logger.error('insertTaskSetting', JSON.stringify(error));
+      reject(error);
     }
-    const taskDate = targetDate || new Date().toDateString();
-    TaskInfoApi.query(taskDate, false, (dateTasks: TaskInfo[]) => {
-      const currentTask = dateTasks.find((item: TaskInfo) => item.taskID === params.taskID);
-      TaskInfoApi.updateDataByDate(params, (globalFlag: number) => {
-        if (!globalFlag) {
-          Logger.error('insertTaskSetting', 'update global task setting failed!');
-          reject(globalFlag);
+  });
+}
+
+/**
+ * Activate reminders for plans whose start date has arrived. Future plans are
+ * deliberately ignored until this check runs on or after their start date.
+ */
+export const syncPlanReminders = (context: Context): void => {
+  TaskInfoApi.query(Const.GLOBAL_KEY, false, (globalTasks: TaskInfo[]) => {
+    const today = dateAtMidnight(new Date().toDateString());
+    globalTasks.forEach((task: TaskInfo) => {
+      if (!task.isOpen || !task.isAlarm) {
+        return;
+      }
+      const startDate = dateAtMidnight(task.planStartDate || today.toDateString());
+      if (startDate.getTime() <= today.getTime()) {
+        useReminder(task, context);
+      }
+    });
+
+    // One-off tasks are stored only on their selected date. Once that date
+    // arrives, publish its reminder as well; they are intentionally not
+    // scheduled while the selected date is still in the future.
+    TaskInfoApi.query(today.toDateString(), false, (todayTasks: TaskInfo[]) => {
+      todayTasks.forEach((task: TaskInfo) => {
+        if (!task.isOpen || !task.isAlarm || task.isRecurring) {
           return;
         }
-        let taskInfoStr = JSON.stringify(params);
-        let taskInfo: TaskInfo = JSON.parse(taskInfoStr);
-        taskInfo.date = taskDate;
-        // Editing an active task must not erase the selected day's progress. A task that is
-        // enabled for the first time (or re-enabled) always starts unfinished.
-        if (params.isOpen && currentTask?.isOpen) {
-          taskInfo.isDone = currentTask.isDone;
-          taskInfo.finValue = currentTask.finValue;
-          taskInfo.status = currentTask.status;
-        } else {
-          taskInfo.isDone = false;
-          taskInfo.finValue = '';
-          taskInfo.status = TaskStatus.NOT_STARTED;
+        const taskDate = dateAtMidnight(task.planStartDate || task.date);
+        if (taskDate.getTime() <= today.getTime()) {
+          useReminder(task, context);
         }
-        TaskInfoApi.updateDataByDate(taskInfo, (dateFlag: number) => {
-          if (dateFlag) {
-            resolve(dateFlag);
-            return;
-          }
-          // Older dates normally already contain task rows. Keep an insert fallback
-          // so adding to an uninitialized date still writes to the selected date.
-          TaskInfoApi.insertData(taskInfo, (insertFlag: number) => {
-            if (!insertFlag) {
-              Logger.error('insertTaskSetting', `save task for ${taskDate} failed!`);
-              reject(insertFlag);
-              return;
-            }
-            resolve(insertFlag);
-          });
-        });
       });
     });
   });
-}
+};
 
 /**
  * @description Used to initialize task list data from database data
@@ -186,6 +341,14 @@ export const taskIndexDataInit = (taskInitList: ITaskItem[], taskInfoData: TaskI
         content.cycleDays = item?.cycleDays;
         content.cycleTarget = item?.cycleTarget;
         content.dataSrc = item?.dataSrc;
+        content.planStartDate = item?.planStartDate;
+        if (item?.isRecurring) {
+          content.repeatEnabled = true;
+        } else if (item?.planStartDate) {
+          content.repeatEnabled = false;
+        } else {
+          content.repeatEnabled = undefined;
+        }
       }
     });
     return content;

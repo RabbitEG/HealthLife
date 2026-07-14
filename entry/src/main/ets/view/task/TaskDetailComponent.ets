@@ -26,7 +26,8 @@ import {
   TargetSetItem,
   OpenRemindItem,
   RemindTimeItem,
-  FrequencyItem
+  FrequencyItem,
+  EffectiveRangeItem
 } from './TaskEditListItem';
 import { BroadCast, BroadCastType } from '../../common/utils/BroadCast';
 import { HealthDataSrcMgr } from '../../common/utils/HealthDataSrcMgr';
@@ -58,6 +59,14 @@ export default struct TaskDetail {
     this.isChanged = true;
   }
 
+  isPastTargetDate(): boolean {
+    let targetDate = new Date(this.settingParams?.date || new Date().toDateString());
+    let today = new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return targetDate.getTime() < today.getTime();
+  }
+
   backIndexParams(): string {
     return formatParams(this.settingParams);
   }
@@ -72,6 +81,9 @@ export default struct TaskDetail {
         this.settingParams.endTime, this.settingParams.frequency, false,
         this.settingParams.isOpen, TaskStatus.NOT_STARTED, this.settingParams.subTasks,
         this.settingParams.cycleDays, this.settingParams.cycleTarget, this.settingParams.dataSrc);
+      taskInfo.planStartDate = this.settingParams.planStartDate || this.settingParams.date || new Date().toDateString();
+      taskInfo.isRecurring = this.settingParams.repeatEnabled !== false;
+      taskInfo.repeatEnabled = this.settingParams.repeatEnabled;
       addTask(taskInfo, context, this.settingParams.date).then((res: number) => {
         GlobalContext.getContext().setObject('taskListChange', true);
         router.back({
@@ -95,6 +107,10 @@ export default struct TaskDetail {
   }
 
   aboutToAppear() {
+    if (this.settingParams.repeatEnabled === undefined) {
+      this.settingParams.repeatEnabled = !this.isPastTargetDate();
+    }
+    this.isChanged = false;
     this.broadCast.off(BroadCastType.SHOW_TARGET_SETTING_DIALOG, () => {});
     this.broadCast.off(BroadCastType.SHOW_REMIND_TIME_DIALOG, () => {});
     this.broadCast.off(BroadCastType.SHOW_FREQUENCY_DIALOG, () => {});
@@ -147,6 +163,13 @@ export default struct TaskDetail {
           .onClick(() => {
             this.broadCast.emit(BroadCastType.SHOW_FREQUENCY_DIALOG);
           })
+
+          if (!this.isPastTargetDate()) {
+            ListItem() {
+              EffectiveRangeItem()
+            }
+            .listItemStyle()
+          }
 
         }
         .width(Const.THOUSANDTH_940)

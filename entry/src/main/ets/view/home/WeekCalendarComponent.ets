@@ -157,9 +157,10 @@ export struct WeekCalendar {
           .borderRadius(Const.DEFAULT_14)
           .onClick(() => this.goToNextWeek())
 
-          Text('📅')
-            .fontSize($r('app.float.default_20'))
-            .fontColor($r('app.color.blueColor'))
+          Image($r('app.media.ic_tabs_calendar_sel'))
+            .width($r('app.float.default_20'))
+            .height($r('app.float.default_20'))
+            .objectFit(ImageFit.Contain)
             .margin({ left: $r('app.float.default_12') })
             .onClick(() => this.openMonthAction())
 

@@ -23,5 +23,7 @@ export default class PublishReminderInfo {
   title: string = '';
   content: string = '';
   notificationId: number = 0;
+  // Set for a one-off task; empty means a weekly alarm.
+  oneOffDate: string = '';
 
 }

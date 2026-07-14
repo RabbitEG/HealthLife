@@ -14,6 +14,7 @@
  */
 
 import router from '@ohos.router';
+import common from '@ohos.app.ability.common';
 import promptAction from '@ohos.promptAction';
 import HealthText from './HealthTextComponent';
 import AddBtn from '../view/home/AddBtnComponent';
@@ -30,8 +31,10 @@ import AchievementInfo from '../viewmodel/AchievementInfo';
 import { MonthCalendarView } from './home/MonthCalendarComponent';
 import Logger from '../common/utils/Logger';
 import { dateToStr } from '../common/utils/Utils';
+import MoodStorage, { MoodRecord } from '../common/utils/MoodStorage';
 
 const WHITE_COLOR_0X = 255;
+const MOOD_OPTIONS: string[] = ['开心 😊', '平静 😌', '一般 😐', '难过 😔', '生气 😡'];
 
 @Styles
 function allSize() {
@@ -60,7 +63,11 @@ export default struct HomeIndex {
   @ObjectLink homeStore: HomeStore;
   @Link editedTaskInfo: ITaskItem;
   @Link @Watch('taskChange') editedTaskID: string;
+  @Link moodRefreshToken: number;
   @State showMonthCalendar: boolean = false;
+  @State showMoodPicker: boolean = false;
+  @State selectedMood: string = '';
+  @State moodNote: string = '';
   private scroller: Scroller = new Scroller();
   private yOffset: number = 0;
 
@@ -79,6 +86,58 @@ export default struct HomeIndex {
     let selected = new Date(this.homeStore.showDate);
     selected.setHours(0, 0, 0, 0);
     return selected.getTime() < today.getTime();
+  }
+
+  isFutureDate(): boolean {
+    let today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let selected = new Date(this.homeStore.showDate);
+    selected.setHours(0, 0, 0, 0);
+    return selected.getTime() > today.getTime();
+  }
+
+  canSetMood(): boolean {
+    return !this.isFutureDate() && (!this.isPastDate() || this.allowEditPast);
+  }
+
+  openMoodPicker(): void {
+    if (this.isFutureDate()) {
+      promptAction.showToast({ message: '未来日期不能设置心情' });
+      return;
+    }
+    if (this.isPastDate() && !this.allowEditPast) {
+      promptAction.showToast({ message: $r('app.string.past_edit_disabled') });
+      return;
+    }
+    const selectedDate = dateToStr(new Date(this.homeStore.showDate));
+    MoodStorage.load(getContext(this) as common.UIAbilityContext, selectedDate)
+      .then((record: MoodRecord) => {
+        this.selectedMood = record.mood;
+        this.moodNote = record.note;
+        this.showMoodPicker = true;
+      })
+      .catch(() => {
+        this.selectedMood = '';
+        this.moodNote = '';
+        this.showMoodPicker = true;
+      });
+  }
+
+  saveMood(): void {
+    if (this.selectedMood.length === 0) {
+      promptAction.showToast({ message: '请先选择一种心情' });
+      return;
+    }
+    const selectedDate = dateToStr(new Date(this.homeStore.showDate));
+    MoodStorage.save(getContext(this) as common.UIAbilityContext, selectedDate, this.selectedMood, this.moodNote)
+      .then(() => {
+        this.showMoodPicker = false;
+        this.moodRefreshToken += 1;
+        promptAction.showToast({ message: '当天心情已保存' });
+      })
+      .catch(() => {
+        promptAction.showToast({ message: '心情保存失败，请稍后重试' });
+      });
   }
 
   taskItemAction(item: TaskInfo, isClick: boolean): void {
@@ -102,6 +161,12 @@ export default struct HomeIndex {
       editTask.frequency = item.frequency;
       editTask.isOpen = item.isOpen;
       editTask.date = dateToStr(new Date(this.homeStore.showDate));
+      editTask.planStartDate = item.planStartDate;
+      if (item.isRecurring) {
+        editTask.repeatEnabled = true;
+      } else if (item.planStartDate) {
+        editTask.repeatEnabled = false;
+      }
       router.pushUrl({ url: 'pages/TaskEditPage', params: { params: JSON.stringify(editTask) } });
     }
   }
@@ -194,6 +259,17 @@ export default struct HomeIndex {
       AddBtn({ clickAction: () => {
         this.editTaskAction()
       } })
+      Button({ type: ButtonType.Circle, stateEffect: false }) {
+        Text('☺')
+          .fontSize(Const.DEFAULT_20)
+          .fontColor('#007DFF')
+      }
+      .width($r('app.float.default_48'))
+      .height($r('app.float.default_48'))
+      .backgroundColor(Color.White)
+      .position({ x: Const.THOUSANDTH_830, y: Const.THOUSANDTH_800 })
+      .zIndex(Const.HOME_BTN_Z)
+      .onClick(() => this.openMoodPicker())
       Row() {
         Text($r('app.string.EntryAbility_label'))
           .titleTextStyle()
@@ -206,6 +282,54 @@ export default struct HomeIndex {
       .backgroundColor(`rgba(${WHITE_COLOR_0X},${WHITE_COLOR_0X},${WHITE_COLOR_0X},${this.naviAlpha})`)
 
       CustomDialogView()
+      if (this.showMoodPicker) {
+        Column({ space: Const.DEFAULT_12 }) {
+          Row() {
+            Text('设置当天心情')
+              .fontSize(Const.DEFAULT_18)
+              .fontWeight(Const.FONT_WEIGHT_700)
+              .fontColor('#182431')
+            Blank()
+            Text('×')
+              .fontSize(Const.DEFAULT_24)
+              .fontColor('#7A818A')
+              .onClick(() => this.showMoodPicker = false)
+          }
+          ForEach(MOOD_OPTIONS, (mood: string) => {
+            Button(mood)
+              .width(Const.FULL_WIDTH)
+              .height(Const.DEFAULT_48)
+              .fontSize(Const.DEFAULT_16)
+              .fontColor('#182431')
+              .backgroundColor(this.selectedMood === mood ? '#DCEEFF' : '#F1F3F5')
+              .borderRadius(22)
+              .onClick(() => this.selectedMood = mood)
+          }, (mood: string) => mood)
+          TextInput({ text: this.moodNote, placeholder: '用一句话记录这一天（可选）' })
+            .width(Const.FULL_WIDTH)
+            .height(Const.DEFAULT_48)
+            .fontSize(Const.DEFAULT_14)
+            .maxLength(80)
+            .backgroundColor('#F1F3F5')
+            .borderRadius(12)
+            .onChange((value: string) => this.moodNote = value)
+          Button('保存心情')
+            .width(Const.FULL_WIDTH)
+            .height(Const.DEFAULT_48)
+            .fontSize(Const.DEFAULT_16)
+            .fontColor(Color.White)
+            .backgroundColor(this.selectedMood.length > 0 ? '#007DFF' : '#A7CFFF')
+            .borderRadius(24)
+            .enabled(this.selectedMood.length > 0)
+            .onClick(() => this.saveMood())
+        }
+        .width('88%')
+        .padding(Const.DEFAULT_20)
+        .backgroundColor(Color.White)
+        .borderRadius(20)
+        .position({ x: '6%', y: '18%' })
+        .zIndex(Const.HOME_BTN_Z + 2)
+      }
       if (this.showMonthCalendar) {
         MonthCalendarView({
           homeStore: this.homeStore,

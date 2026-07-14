@@ -28,6 +28,7 @@ import GlobalInfoApi from '../common/database/tables/GlobalInfoApi';
 import GlobalInfo from '../viewmodel/GlobalInfo';
 import { GlobalContext } from '../common/utils/GlobalContext';
 import { ProfilePage } from './ProfilePage';
+import { syncPlanReminders } from '../viewmodel/TaskViewModel';
 
 @Styles function allSize() {
   .width(Const.THOUSANDTH_1000)
@@ -41,9 +42,11 @@ struct Index {
   @State editedTaskInfo: ITaskItem = router.getParams() ? (router.getParams() as Record<string, Object>).editTask as ITaskItem : {} as ITaskItem;
   @State editedTaskID: string = '0';
   @State homeStore: HomeStore = new HomeStore(new Date());
+  @State moodRefreshToken: number = 0;
   private tabController: TabsController = new TabsController();
 
   aboutToAppear() {
+    syncPlanReminders(getContext(this) as common.Context);
     notificationManager.requestEnableNotification().then(() => {
       Logger.info('onPageShow', `requestEnableNotification success`);
     }).catch((err: Error) => {
@@ -52,6 +55,8 @@ struct Index {
   }
 
   onPageShow() {
+    syncPlanReminders(getContext(this) as common.Context);
+    this.moodRefreshToken += 1;
     Logger.info('onPageShow', JSON.stringify(router.getParams()));
     let params = (router.getParams() ? router.getParams() : {}) as Record<string, Object>;
     let result = params.editTask ? params.editTask as string : '{}';
@@ -99,9 +104,10 @@ struct Index {
 
   @Builder TabBuilder(index: number) {
     Column() {
-      Text(this.getTabIcon(index))
-        .fontSize($r('app.float.default_24'))
-        .fontColor(this.currentPage === index ? $r('app.color.blueColor') : $r('app.color.tabTitleColor'))
+      Image(index === this.currentPage ? NavList[index].icon_selected : NavList[index].icon)
+        .width($r('app.float.default_24'))
+        .height($r('app.float.default_24'))
+        .objectFit(ImageFit.Contain)
       Text(NavList[index].text)
         .fontSize($r('app.float.default_10'))
         .fontWeight(Const.FONT_WEIGHT_500)
@@ -110,25 +116,15 @@ struct Index {
     }.justifyContent(FlexAlign.Center).allSize()
   }
 
-  getTabIcon(index: number): string {
-    switch (index) {
-      case TabId.HOME:
-        return '☑';
-      case TabId.CALENDAR:
-        return '📅';
-      case TabId.ACHIEVEMENT:
-        return '🏆';
-      case TabId.PROFILE:
-        return '👤';
-      default:
-        return '·';
-    }
-  }
-
   build() {
     Tabs({ barPosition: BarPosition.End, controller: this.tabController }) {
       TabContent() {
-        HomeIndex({ homeStore: this.homeStore, editedTaskInfo: $editedTaskInfo, editedTaskID: $editedTaskID })
+        HomeIndex({
+          homeStore: this.homeStore,
+          editedTaskInfo: $editedTaskInfo,
+          editedTaskID: $editedTaskID,
+          moodRefreshToken: $moodRefreshToken
+        })
           .borderWidth({ bottom: 1 })
           .borderColor($r('app.color.primaryBgColor'))
       }
@@ -136,7 +132,7 @@ struct Index {
       .align(Alignment.Start)
 
       TabContent() {
-        MineIndex({ homeStore: this.homeStore })
+        MineIndex({ homeStore: this.homeStore, refreshToken: this.moodRefreshToken })
       }
       .tabBar(this.TabBuilder(TabId.CALENDAR))
 
@@ -157,6 +153,7 @@ struct Index {
     .vertical(false)
     .onChange((index) => {
       this.currentPage = index;
+      this.moodRefreshToken += 1;
     })
   }
 }

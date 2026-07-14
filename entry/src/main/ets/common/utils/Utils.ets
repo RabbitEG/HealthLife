@@ -69,6 +69,11 @@ export function sameDate(firstDate: Date, timestamp: number) {
     return true;
 }
 
+export function sameMonth(firstDate: Date, secondDate: Date): boolean {
+    return firstDate.getFullYear() === secondDate.getFullYear() &&
+        firstDate.getMonth() === secondDate.getMonth();
+}
+
 export function ratio2percent(ratio: number): string {
     return `${ratio * 100}%`;
 }

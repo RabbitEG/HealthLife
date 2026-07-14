@@ -16,7 +16,7 @@
 import { CommonConstants as Const } from '../common/constants/CommonConstants';
 import { ACHIEVEMENT_LEVEL_KEY } from '../model/AchieveModel';
 import { TaskMapById, ITaskItem, ACHIEVEMENT_LEVEL_LIST } from '../model/TaskInitList';
-import TaskInfo, { TaskStatus, TaskTypeEnum } from './TaskInfo';
+import TaskInfo, { TaskStatus, TaskTypeEnum, SubTaskInfo } from './TaskInfo';
 import DayInfo from './DayInfo';
 import { dateToStr, weekDateFormat } from '../common/utils/Utils';
 import { WeekDateModel, initializeOnStartUp, getPreviousWeek, WEEK_DAY_NUM } from '../model/WeekCalendarModel';
@@ -125,26 +125,50 @@ export class HomeStore {
     const selectedDateStr = selectedDayInfo.dateStr;
     this.selectedDayInfo = selectedDayInfo;
     if (selectedDayInfo.taskList?.length === 0) {
-      // get data form db
-      TaskInfoTableApi.query(selectedDayInfo.dateStr, true, (res: TaskInfo[]) => {
-        Logger.info('Selected TaskInfoList: ', JSON.stringify(res));
-        selectedDayInfo.taskList = res;
-        this.dateArr = this.dateArr.map((item: WeekDateModel) => {
-          if(item.dateStr === selectedDayInfo.dateStr) {
-            let taskListStr = JSON.stringify(res);
-            item.taskList = JSON.parse(taskListStr);
-            return item;
-          } else {
-            return item;
+      // Materialize a recurring plan lazily before querying the selected day.
+      // This keeps future dates (and dates outside the initial 366-day
+      // materialization window) consistent with the global plan.
+      DatabaseApi.ensureTasksForDate(selectedDateStr).then(() => {
+        TaskInfoTableApi.query(selectedDateStr, true, (res: TaskInfo[]) => {
+          Logger.info('Selected TaskInfoList: ', JSON.stringify(res));
+          selectedDayInfo.taskList = res;
+          const dayInfo = selectedDayInfo.dayInfo || new DayInfo(selectedDateStr, 0, 0);
+          dayInfo.date = selectedDateStr;
+          dayInfo.targetTaskNum = res.length;
+          dayInfo.finTaskNum = this.getFinishedTaskCount(res);
+          selectedDayInfo.dayInfo = dayInfo;
+          this.persistDayInfo(dayInfo).catch((error: Error) => {
+            Logger.error('Selected DayInfo update', JSON.stringify(error));
+          });
+          this.dateArr = this.dateArr.map((item: WeekDateModel) => {
+            if (item.dateStr === selectedDateStr) {
+              let taskListStr = JSON.stringify(res);
+              item.taskList = JSON.parse(taskListStr);
+              item.dayInfo = JSON.parse(JSON.stringify(dayInfo));
+              return item;
+            } else {
+              return item;
+            }
+          }).slice();
+          // A query for an older click may finish after the user has selected a
+          // different date. Only refresh the visible selection when it is still
+          // the date represented by this result.
+          if (dateToStr(new Date(this.showDate)) === selectedDateStr) {
+            const currentInfo = this.dateArr.find((item: WeekDateModel) => item.dateStr === selectedDateStr);
+            this.selectedDayInfo = currentInfo || selectedDayInfo;
           }
-        }).slice();
-        // A query for an older click may finish after the user has selected a
-        // different date. Only refresh the visible selection when it is still
-        // the date represented by this result.
-        if (dateToStr(new Date(this.showDate)) === selectedDateStr) {
-          const currentInfo = this.dateArr.find((item: WeekDateModel) => item.dateStr === selectedDateStr);
-          this.selectedDayInfo = currentInfo || selectedDayInfo;
-        }
+        });
+      }).catch((error: Error) => {
+        Logger.error('Selected TaskInfoList ensure', JSON.stringify(error));
+        TaskInfoTableApi.query(selectedDateStr, true, (res: TaskInfo[]) => {
+          selectedDayInfo.taskList = res;
+          const dayInfo = selectedDayInfo.dayInfo || new DayInfo(selectedDateStr, 0, 0);
+          dayInfo.date = selectedDateStr;
+          dayInfo.targetTaskNum = res.length;
+          dayInfo.finTaskNum = this.getFinishedTaskCount(res);
+          selectedDayInfo.dayInfo = dayInfo;
+          this.persistDayInfo(dayInfo).catch(() => {});
+        });
       });
     }
     Logger.info("selectedDayTaskInfo: ", JSON.stringify(selectedDayInfo.taskList));
@@ -179,6 +203,13 @@ export class HomeStore {
       task.cycleTarget = editedTaskInfo.cycleTarget;
       task.dataSrc = editedTaskInfo.dataSrc;
       task.inputHistory = '';
+      task.planStartDate = editedTaskInfo.planStartDate || taskDate;
+      task.isRecurring = editedTaskInfo.repeatEnabled === true;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedTaskDate = new Date(taskDate);
+      selectedTaskDate.setHours(0, 0, 0, 0);
+      const isHistoricalTask = selectedTaskDate.getTime() < today.getTime();
       this.dateArr = this.dateArr.map((item: WeekDateModel) => {
         if (task.date === item.dateStr) {
           Logger.info('item', JSON.stringify(item));
@@ -193,6 +224,23 @@ export class HomeStore {
               task.isDone = currentTask.isDone;
               task.finValue = currentTask.finValue;
               task.status = currentTask.status;
+              task.subTasks = currentTask.subTasks;
+              task.inputHistory = currentTask.inputHistory;
+            } else if (!isHistoricalTask) {
+              // The first activation is recorded as completed for the
+              // selected date, matching the persisted addTask record.
+              task.isDone = true;
+              task.finValue = task.targetValue;
+              task.status = TaskStatus.COMPLETED;
+              if (task.taskType === TaskTypeEnum.SUB_TASK && task.subTasks) {
+                try {
+                  const subTasks = JSON.parse(task.subTasks) as Array<SubTaskInfo>;
+                  subTasks.forEach((subTask) => subTask.isDone = true);
+                  task.subTasks = JSON.stringify(subTasks);
+                } catch (error) {
+                  Logger.warn('updateTaskInfoList', `invalid subTasks: ${JSON.stringify(error)}`);
+                }
+              }
             }
             taskList = taskList.filter((taskItem) => taskItem.taskID != taskID)
               .concat(task)
@@ -339,6 +387,8 @@ export class HomeStore {
       updateTask.cycleTarget = task.cycleTarget;
       updateTask.dataSrc = task.dataSrc;
       updateTask.inputHistory = inputHistory;
+      updateTask.planStartDate = task.planStartDate;
+      updateTask.isRecurring = task.isRecurring;
 
       let taskType = task.taskType;
 

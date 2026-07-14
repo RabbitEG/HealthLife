@@ -23,6 +23,44 @@ import TaskInfoApi from '../common/database/tables/TaskInfoApi';
 import Logger from '../common/utils/Logger';
 import { TaskList } from './TaskInitList';
 
+function normalizeDate(dateStr: string): Date {
+  let date = new Date(dateStr);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function matchesFrequency(date: Date, frequency: string): boolean {
+  if (!frequency || frequency.trim().length === 0) {
+    return true;
+  }
+  const ids = frequency.split(',')
+    .map((item: string) => Number(item.trim()))
+    .filter((item: number) => !Number.isNaN(item));
+  if (ids.length === 0) {
+    return true;
+  }
+  const dayId = date.getDay() === 0 ? 7 : date.getDay();
+  return ids.indexOf(dayId) >= 0;
+}
+
+function upsertTask(task: TaskInfo): Promise<number> {
+  return new Promise((resolve, reject) => {
+    TaskInfoApi.updateDataByDate(task, (updateFlag: number) => {
+      if (updateFlag) {
+        resolve(updateFlag);
+        return;
+      }
+      TaskInfoApi.insertData(task, (insertFlag: number) => {
+        if (!insertFlag) {
+          reject(new Error(`save task failed: ${task.date}/${task.taskID}`));
+          return;
+        }
+        resolve(insertFlag);
+      });
+    });
+  });
+}
+
 export class DatabaseModel {
   /**
    * Init when open the app
@@ -70,30 +108,85 @@ export class DatabaseModel {
   }
 
   ensureTasksForDate(date: string): Promise<void> {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       TaskInfoApi.query(date, false, (existing: TaskInfo[]) => {
-        const missing = TaskList.filter((template: TaskInfo) => {
-          return !existing.some((item: TaskInfo) => item.taskID === template.taskID);
-        });
-        if (missing.length === 0) {
-          resolve();
+        // The global template is maintained only for today/future recurring
+        // plans. A historical date is never copied back into it.
+        if (date === Const.GLOBAL_KEY) {
+          const missing = TaskList.filter((template: TaskInfo) => {
+            return !existing.some((item: TaskInfo) => item.taskID === template.taskID);
+          });
+          Promise.all(missing.map((template: TaskInfo) => {
+            const task = JSON.parse(JSON.stringify(template)) as TaskInfo;
+            task.id = 0;
+            task.date = date;
+            task.isOpen = false;
+            task.isAlarm = false;
+            task.isDone = false;
+            task.finValue = '';
+            task.planStartDate = '';
+            task.isRecurring = false;
+            return upsertTask(task);
+          })).then(() => resolve()).catch((error: Error) => reject(error));
           return;
         }
-        let pending = missing.length;
-        missing.forEach((template: TaskInfo) => {
-          const task = JSON.parse(JSON.stringify(template)) as TaskInfo;
-          task.id = 0;
-          task.date = date;
-          task.isOpen = false;
-          task.isAlarm = false;
-          task.isDone = false;
-          task.finValue = '';
-          TaskInfoApi.insertData(task, () => {
-            pending--;
-            if (pending === 0) {
-              resolve();
+
+        TaskInfoApi.query(Const.GLOBAL_KEY, false, (globalTasks: TaskInfo[]) => {
+          const today = normalizeDate(new Date().toDateString());
+          const targetDate = normalizeDate(date);
+          const operations: Promise<number>[] = [];
+
+          TaskList.forEach((template: TaskInfo) => {
+            const current = existing.find((item: TaskInfo) => item.taskID === template.taskID);
+            const globalTask = globalTasks.find((item: TaskInfo) => item.taskID === template.taskID);
+            const legacyPlan = globalTask?.isOpen && !globalTask?.planStartDate;
+            const hasPlan = globalTask?.isOpen && (globalTask?.isRecurring || legacyPlan);
+            const startDate = normalizeDate(globalTask?.planStartDate || today.toDateString());
+            const isScheduled = hasPlan && targetDate.getTime() >= startDate.getTime()
+              && matchesFrequency(targetDate, globalTask?.frequency || '');
+
+            if (isScheduled && globalTask) {
+              const task = JSON.parse(JSON.stringify(globalTask)) as TaskInfo;
+              task.id = current?.id || 0;
+              task.date = date;
+              task.isOpen = true;
+              task.planStartDate = globalTask.planStartDate || today.toDateString();
+              task.isRecurring = true;
+              task.isDone = false;
+              task.finValue = '';
+              task.status = 0;
+              task.inputHistory = '';
+              if (current?.isOpen && current?.isRecurring
+                && current.planStartDate === task.planStartDate) {
+                task.isDone = current.isDone;
+                task.finValue = current.finValue;
+                task.status = current.status;
+                task.inputHistory = current.inputHistory;
+                task.subTasks = current.subTasks;
+              }
+              operations.push(upsertTask(task));
+            } else if (!current) {
+              const task = JSON.parse(JSON.stringify(template)) as TaskInfo;
+              task.id = 0;
+              task.date = date;
+              task.isOpen = false;
+              task.isAlarm = false;
+              task.isDone = false;
+              task.finValue = '';
+              task.planStartDate = '';
+              task.isRecurring = false;
+              operations.push(upsertTask(task));
+            } else if (current.isRecurring && targetDate.getTime() >= today.getTime()
+              && !isScheduled) {
+              // A changed frequency or a stopped plan must not leave stale
+              // future occurrences visible. Historical records are retained.
+              const task = JSON.parse(JSON.stringify(current)) as TaskInfo;
+              task.isOpen = false;
+              task.isRecurring = false;
+              operations.push(upsertTask(task));
             }
           });
+          Promise.all(operations).then(() => resolve()).catch((error: Error) => reject(error));
         });
       });
     });

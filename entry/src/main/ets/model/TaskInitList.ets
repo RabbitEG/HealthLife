@@ -5,6 +5,8 @@ import { CommonConstants as Const } from '../common/constants/CommonConstants';
 
 export interface ITaskItem {
   date?: string;
+  repeatEnabled?: boolean;
+  planStartDate?: string;
   taskID: number;
   taskName: string;
   taskType: number;

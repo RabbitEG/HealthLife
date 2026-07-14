@@ -507,6 +507,54 @@
     {
       "name": "empty",
       "value": "empty"
+    },
+    {
+      "name": "about_title",
+      "value": "About"
+    },
+    {
+      "name": "about_version",
+      "value": "Version"
+    },
+    {
+      "name": "about_author",
+      "value": "Author"
+    },
+    {
+      "name": "about_author_name",
+      "value": "Chen Zhiyi"
+    },
+    {
+      "name": "about_project",
+      "value": "Gitee"
+    },
+    {
+      "name": "about_project_name",
+      "value": "Based on project"
+    },
+    {
+      "name": "about_github",
+      "value": "This Project"
+    },
+    {
+      "name": "about_github_url",
+      "value": "https://github.com/openharmony-appsamples/HealthyLife"
+    },
+    {
+      "name": "about_buy_coffee",
+      "value": "Buy the author a coffee"
+    },
+    {
+      "name": "about_sponsor_maintaining",
+      "value": "Sponsor method is under maintenance, stay tuned!"
+    },
+    {
+      "name": "about_copy_success",
+      "value": "Copied to clipboard"
+    },
+    {
+      "name": "about_app_desc",
+      "value": "A task management app for building healthy lifestyle habits"
     }
   ]
 }

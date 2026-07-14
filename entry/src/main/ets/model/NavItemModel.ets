@@ -36,8 +36,8 @@ export const NavList: NavItem[] = [
     id: TabId.HOME
   },
   {
-    icon: $r('app.media.ic_tabs_home_normal'),
-    icon_selected: $r('app.media.ic_tabs_home_sel'),
+    icon: $r('app.media.ic_tabs_calendar_normal'),
+    icon_selected: $r('app.media.ic_tabs_calendar_sel'),
     text: $r('app.string.tab_mine'),
     id: TabId.CALENDAR
   },
@@ -48,8 +48,8 @@ export const NavList: NavItem[] = [
     id: TabId.ACHIEVEMENT
   },
   {
-    icon: $r('app.media.ic_tabs_achievement_normal'),
-    icon_selected: $r('app.media.ic_tabs_achievement_sel'),
+    icon: $r('app.media.ic_tabs_mine_normal'),
+    icon_selected: $r('app.media.ic_tabs_mine_sel'),
     text: $r('app.string.tab_profile'),
     id: TabId.PROFILE
   },

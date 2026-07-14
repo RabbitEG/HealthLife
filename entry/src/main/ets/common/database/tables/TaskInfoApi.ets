@@ -82,6 +82,10 @@ class TaskInfoApi {
           tmp.cycleTarget = resultSet.getDouble(resultSet.getColumnIndex('cycleTarget'));
           tmp.dataSrc = resultSet.getString(resultSet.getColumnIndex('dataSrc'));
           tmp.inputHistory = resultSet.getString(resultSet.getColumnIndex('inputHistory'));
+          const planStartDateIndex = resultSet.getColumnIndex('planStartDate');
+          const recurringIndex = resultSet.getColumnIndex('isRecurring');
+          tmp.planStartDate = planStartDateIndex >= 0 ? resultSet.getString(planStartDateIndex) : '';
+          tmp.isRecurring = recurringIndex >= 0 ? resultSet.getDouble(recurringIndex) ? true : false : false;
           result[i] = tmp;
           resultSet.goToNextRow();
         }
@@ -152,6 +156,12 @@ function generateBucket(taskInfo: TaskInfo): dataRdb.ValuesBucket {
           break;
         case 'inputHistory':
           valueBucket[item] = taskInfo.inputHistory;
+          break;
+        case 'planStartDate':
+          valueBucket[item] = taskInfo.planStartDate;
+          break;
+        case 'isRecurring':
+          valueBucket[item] = taskInfo.isRecurring;
           break;
         default:
           break;

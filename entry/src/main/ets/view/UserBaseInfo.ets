@@ -17,15 +17,81 @@
 export struct UserBaseInfo {
   @Prop nickname: string = '';
   @Prop signature: string = '';
+  @Prop avatarUri: string = '';
+  @Prop avatarId: string = '';
+
+  getDefaultAvatar(): Resource {
+    switch (this.avatarId) {
+      case 'male':
+        return $r('app.media.avatar_male');
+      case 'female':
+        return $r('app.media.avatar_female');
+      case 'water':
+        return $r('app.media.ic_task_water');
+      case 'brush':
+        return $r('app.media.ic_task_brush');
+      case 'apple':
+        return $r('app.media.ic_task_apple');
+      case 'smile':
+        return $r('app.media.ic_task_smile');
+      case 'morning':
+        return $r('app.media.ic_task_morning');
+      case 'night':
+        return $r('app.media.ic_task_night');
+      case 'health_01':
+        return $r('app.media.avatar_health_01');
+      case 'health_02':
+        return $r('app.media.avatar_health_02');
+      case 'health_03':
+        return $r('app.media.avatar_health_03');
+      case 'health_04':
+        return $r('app.media.avatar_health_04');
+      case 'health_05':
+        return $r('app.media.avatar_health_05');
+      case 'health_06':
+        return $r('app.media.avatar_health_06');
+      case 'health_07':
+        return $r('app.media.avatar_health_07');
+      case 'health_08':
+        return $r('app.media.avatar_health_08');
+      case 'health_09':
+        return $r('app.media.avatar_health_09');
+      case 'health_10':
+        return $r('app.media.avatar_health_10');
+      case 'health_11':
+        return $r('app.media.avatar_health_11');
+      case 'health_12':
+        return $r('app.media.avatar_health_12');
+      case 'health_13':
+        return $r('app.media.avatar_health_13');
+      case 'health_14':
+        return $r('app.media.avatar_health_14');
+      case 'health_15':
+        return $r('app.media.avatar_health_15');
+      case 'health_16':
+        return $r('app.media.avatar_health_16');
+      default:
+        return $r('app.media.ic_user');
+    }
+  }
 
   build() {
     Column() {
       // userIcon
-      Image($r('app.media.ic_user'))
-        .objectFit(ImageFit.Contain)
-        .height($r('app.float.default_66'))
-        .width($r('app.float.default_66'))
-        .margin({ top: $r('app.float.default_71') })
+      if (this.avatarUri.length > 0) {
+        Image(this.avatarUri)
+          .objectFit(ImageFit.Cover)
+          .height($r('app.float.default_66'))
+          .width($r('app.float.default_66'))
+          .borderRadius(33)
+          .margin({ top: $r('app.float.default_71') })
+      } else {
+        Image(this.getDefaultAvatar())
+          .objectFit(ImageFit.Contain)
+          .height($r('app.float.default_66'))
+          .width($r('app.float.default_66'))
+          .margin({ top: $r('app.float.default_71') })
+      }
 
       Column() {
         Text('LV.7')

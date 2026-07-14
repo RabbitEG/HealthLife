@@ -46,13 +46,18 @@ export default class TaskInfo {
   cycleTarget: number = 0;
   dataSrc: string = '';
   inputHistory: string = '';
+  // Planning metadata persisted with every date-specific task record.
+  planStartDate: string = '';
+  isRecurring: boolean = false;
+  // Transient value from the add/edit page; it is not stored as a DB column.
+  repeatEnabled?: boolean;
 
   constructor(
     id: number, date: string, taskID: number, taskName: string, taskType: number,
     targetValue: string, finValue: string, unit: string, isAlarm: boolean,
     startTime: string, endTime: string, frequency: string, isDone: boolean,
     isOpen: boolean, status: number, subTasks: string, cycleDays: string,
-    cycleTarget: number, dataSrc: string
+    cycleTarget: number, dataSrc: string, planStartDate: string = '', isRecurring: boolean = false
   ) {
     this.id = id;
     this.date = date;
@@ -73,6 +78,8 @@ export default class TaskInfo {
     this.cycleDays = cycleDays;
     this.cycleTarget = cycleTarget;
     this.dataSrc = dataSrc;
+    this.planStartDate = planStartDate;
+    this.isRecurring = isRecurring;
   }
 
   static create(taskID: number, date: string): TaskInfo {

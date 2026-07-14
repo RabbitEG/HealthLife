@@ -152,3 +152,40 @@ export struct FrequencyItem {
     .justifyContent(FlexAlign.SpaceBetween)
   }
 }
+
+@Component
+export struct EffectiveRangeItem {
+  @Consume settingParams: ITaskItem;
+
+  build() {
+    Column({ space: Const.DEFAULT_8 }) {
+      Text('生效范围')
+        .fontSize(Const.DEFAULT_20)
+        .fontWeight(FontWeight.Medium)
+        .width(Const.THOUSANDTH_1000)
+        .textAlign(TextAlign.Start)
+      Row({ space: Const.DEFAULT_8 }) {
+        Text('仅所选日期')
+          .fontSize(Const.DEFAULT_14)
+          .fontColor(this.settingParams.repeatEnabled === false ? $r('app.color.white') : $r('app.color.titleColor'))
+          .backgroundColor(this.settingParams.repeatEnabled === false ? $r('app.color.blueColor') : $r('app.color.btnBgColor'))
+          .borderRadius(Const.DEFAULT_8)
+          .padding({ left: Const.DEFAULT_12, right: Const.DEFAULT_12, top: Const.DEFAULT_8, bottom: Const.DEFAULT_8 })
+          .onClick(() => {
+            this.settingParams.repeatEnabled = false;
+          })
+        Text('从所选日期开始，按频率重复')
+          .fontSize(Const.DEFAULT_14)
+          .fontColor(this.settingParams.repeatEnabled !== false ? $r('app.color.white') : $r('app.color.titleColor'))
+          .backgroundColor(this.settingParams.repeatEnabled !== false ? $r('app.color.blueColor') : $r('app.color.btnBgColor'))
+          .borderRadius(Const.DEFAULT_8)
+          .padding({ left: Const.DEFAULT_12, right: Const.DEFAULT_12, top: Const.DEFAULT_8, bottom: Const.DEFAULT_8 })
+          .onClick(() => {
+            this.settingParams.repeatEnabled = true;
+          })
+      }
+      .width(Const.THOUSANDTH_1000)
+    }
+    .width(Const.THOUSANDTH_1000)
+  }
+}

@@ -17,6 +17,7 @@ import { MineInfoList, InfoItem } from '../model/Mine';
 
 @Component
 export struct ListInfo {
+  onItemClick: Function = () => {};
 
   build() {
     List() {
@@ -41,6 +42,7 @@ export struct ListInfo {
           width: { bottom: $r('app.float.default_1') },
           color: $r('app.color.borderColor')
         })
+        .onClick(() => this.onItemClick(item.id))
 
       }, (item: InfoItem) => JSON.stringify(item));
     }

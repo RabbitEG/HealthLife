@@ -9,9 +9,14 @@
  * Keep this model free of UI dependencies so it can also be reused by a
  * future account page or cloud synchronization service.
  */
+import { CommonConstants as Const } from '../common/constants/CommonConstants';
+
 export default class UserProfile {
   avatarUri: string = '';
-  nickname: string = '健康达人';
+  /** Empty means the system placeholder; otherwise this is a bundled avatar id. */
+  avatarId: string = '';
+  nickname: string = Const.NICK_NAME;
+  signature: string = Const.SIGNATURE;
   gender: string = '保密';
   birthDate: string = '1990-01-01';
   height: number = 170;

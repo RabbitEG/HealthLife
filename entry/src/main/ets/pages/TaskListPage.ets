@@ -20,6 +20,7 @@ import { getAllTask, taskIndexDataInit, taskOriginData } from '../viewmodel/Task
 import TaskInfo from '../viewmodel/TaskInfo';
 import router from '@ohos.router';
 import TaskInfoApi from '../common/database/tables/TaskInfoApi';
+import DatabaseApi from '../model/DatabaseModel';
 
 @Entry
 @Component
@@ -39,8 +40,14 @@ struct TaskIndex {
     if (targetDate) {
       // The add list must reflect the selected day's enabled state, not today's
       // global state, otherwise an already-open label can prevent a past-day add.
-      TaskInfoApi.query(targetDate, false, (res: TaskInfo[]) => {
-        this.updateTaskList(res);
+      DatabaseApi.ensureTasksForDate(targetDate).then(() => {
+        TaskInfoApi.query(targetDate, false, (res: TaskInfo[]) => {
+          this.updateTaskList(res);
+        });
+      }).catch(() => {
+        TaskInfoApi.query(targetDate, false, (res: TaskInfo[]) => {
+          this.updateTaskList(res);
+        });
       });
       return;
     }

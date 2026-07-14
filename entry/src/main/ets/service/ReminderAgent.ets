@@ -109,12 +109,32 @@ function processReminderData(params: PublishReminderInfo, preferences: preferenc
 }
 
 // fetchData
-function fetchData(params: PublishReminderInfo): reminderAgent.ReminderRequestAlarm {
-  return {
+function fetchData(params: PublishReminderInfo): reminderAgent.ReminderRequest {
+  if (params.oneOffDate) {
+    const selectedDate = new Date(params.oneOffDate);
+    const calendarRequest: reminderAgent.ReminderRequestCalendar = {
+      reminderType: reminderAgent.ReminderType.REMINDER_TYPE_CALENDAR,
+      wantAgent: {
+        pkgName: Const.PACKAGE_NAME,
+        abilityName: Const.ENTRY_ABILITY
+      },
+      title: params.title || '',
+      content: params.content || '',
+      notificationId: params.notificationId || -1,
+      slotType: notification.SlotType.SOCIAL_COMMUNICATION,
+      dateTime: {
+        year: selectedDate.getFullYear(),
+        month: selectedDate.getMonth() + 1,
+        day: selectedDate.getDate(),
+        hour: params.hour || 0,
+        minute: params.minute || 0,
+        second: 0
+      }
+    };
+    return calendarRequest;
+  }
+  const alarmRequest: reminderAgent.ReminderRequestAlarm = {
     reminderType: reminderAgent.ReminderType.REMINDER_TYPE_ALARM,
-    hour: params.hour || 0,
-    minute: params.minute || 0,
-    daysOfWeek: params.daysOfWeek || [],
     wantAgent: {
       pkgName: Const.PACKAGE_NAME,
       abilityName: Const.ENTRY_ABILITY
@@ -122,8 +142,12 @@ function fetchData(params: PublishReminderInfo): reminderAgent.ReminderRequestAl
     title: params.title || '',
     content: params.content || '',
     notificationId: params.notificationId || -1,
-    slotType: notification.SlotType.SOCIAL_COMMUNICATION
-  }
+    slotType: notification.SlotType.SOCIAL_COMMUNICATION,
+    hour: params.hour || 0,
+    minute: params.minute || 0,
+    daysOfWeek: params.daysOfWeek || []
+  };
+  return alarmRequest;
 }
 
 function putPreferencesValue(preferences: preferences.Preferences, putKey: string, putValue: number) {

@@ -37,7 +37,9 @@ export class CommonConstants {
       'cycleDays',
       'cycleTarget',
       'dataSrc',
-      'inputHistory'
+      'inputHistory',
+      'planStartDate',
+      'isRecurring'
     ]
   } as CommonConstantsInfo
 
@@ -138,9 +140,9 @@ export class CommonConstants {
 
   static readonly CHOOSE_TIME_OUT_RANGE: string = '选择时间超出范围';
 
-  static readonly NICK_NAME = 'JoIin';
+  static readonly NICK_NAME = '健康生活家';
 
-  static readonly SIGNATURE = '这是一条简短地个人签';
+  static readonly SIGNATURE = '把健康变成日常';
 
   static readonly HOME_BTN_Z = 2;
 

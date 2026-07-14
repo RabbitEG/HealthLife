@@ -563,6 +563,54 @@
     {
       "name": "back_to_today",
       "value": "回到今天"
+    },
+    {
+      "name": "about_title",
+      "value": "关于"
+    },
+    {
+      "name": "about_version",
+      "value": "版本"
+    },
+    {
+      "name": "about_author",
+      "value": "作者"
+    },
+    {
+      "name": "about_author_name",
+      "value": "Chen Zhiyi"
+    },
+    {
+      "name": "about_project",
+      "value": "Gitee"
+    },
+    {
+      "name": "about_project_name",
+      "value": "基于以下项目构建"
+    },
+    {
+      "name": "about_github",
+      "value": "本项目"
+    },
+    {
+      "name": "about_github_url",
+      "value": "https://github.com/openharmony-appsamples/HealthyLife"
+    },
+    {
+      "name": "about_buy_coffee",
+      "value": "请作者喝一杯咖啡"
+    },
+    {
+      "name": "about_sponsor_maintaining",
+      "value": "赞助方式维护中，敬请期待！"
+    },
+    {
+      "name": "about_copy_success",
+      "value": "已复制到剪贴板"
+    },
+    {
+      "name": "about_app_desc",
+      "value": "培养健康生活习惯的任务管理App"
     }
   ]
 }
